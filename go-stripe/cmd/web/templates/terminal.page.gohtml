@@ -5,11 +5,13 @@ Virtual terminal
 {{end}}
 
 {{define "content"}}
+{{$StripeKey := index .StringMap "STRIPE_KEY"}}
 <h2 class="mt-3 text-center">Virtual terminal</h2>
 <hr>
 <form action="/payment-succeeded" method="post"
     name="charge_form" id="charge_form"
     class="d-block needs-validation charge-form" autocomplete="off" novalidate>
+    <input type="hidden" value="{{$StripeKey}}" id="stripeKeyInput" />
     <div class="mb-3">
         <label for="amount" class="form-label">Amount</label>
         <input type="text" class="form-control" id="amount" name="amount"
@@ -42,6 +44,38 @@ Virtual terminal
 {{define "js"}}
     <script src="http://js.stripe.com/v3/"></script>
     <script>
+        let card;
+        let stripe;
+        let stripeKey = document.getElementById("stripeKeyInput").value;
+        stripe = Stripe(stripeKey);
         function val() {}
+        (function() {
+            // create stripe and elements
+            const elements = stripe.elements();
+            const style = {
+                base: {
+                    fontSize: "16px",
+                    lineHeight: "24px",
+                }
+            };
+            // create card entry
+            card = elements.create("card", {
+                style: style,
+                hidePostalCode: true, // TODO - change when go to prod
+            });
+            card.mount("#card-element");
+
+            // check for input errors
+            card.addEventListener("change", function(event){
+                var displayError = document.getElementById("card-errors");
+                if (event.error) {
+                    displayError.classList.remove("d-none");
+                    displayError.textContent = event.error.message;
+                } else {
+                    displayError.classList.add("d-none");
+                    displayError.textContent = "";
+                }
+            });
+        })();
     </script>
 {{end}}

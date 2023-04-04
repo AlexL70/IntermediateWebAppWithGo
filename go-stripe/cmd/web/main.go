@@ -44,6 +44,7 @@ func (app *application) serve() error {
 		WriteTimeout:      5 * time.Second,
 	}
 	app.infoLog.Printf("Starting HTTP server in %q mode on port %d\n", app.config.env, app.config.port)
+	//app.infoLog.Println("Key: ", app.config.stripe.key)
 	return srv.ListenAndServe()
 }
 
