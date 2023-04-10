@@ -6,6 +6,7 @@
 
 {{define "content"}}
 {{$StripeKey := index .StringMap "STRIPE_KEY"}}
+{{$BASE_URL := index .API}}
 <h2 class="mt-3 text-center">Virtual Terminal</h2>
 <hr>
 <div class="alert alert-danger text-center d-none" id="card-messages"></div>
@@ -13,6 +14,7 @@
     name="charge_form" id="charge_form"
     class="d-block needs-validation charge-form" autocomplete="off" novalidate="">
     <input type="hidden" value="{{$StripeKey}}" id="stripeKeyInput" />
+    <input type="hidden" value="{{$BASE_URL}}" id="base_url"/>
     <div class="mb-3">
         <label for="amount" class="form-label">Amount</label>
         <input type="text" class="form-control" id="amount" name="amount"
@@ -114,7 +116,8 @@
                 body: JSON.stringify(payload),
             };
 
-            fetch("http://localhost:4001/api/payment-intent", requestOptions)
+            const base_url = document.getElementById("base_url").value;
+            fetch(`${base_url}/api/payment-intent`, requestOptions)
                 .then(resp => resp.text())
                 .then(resp => {
                     let data;
