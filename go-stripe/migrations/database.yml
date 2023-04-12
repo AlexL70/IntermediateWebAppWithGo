@@ -1,0 +1,8 @@
+development:
+  dialect: mysql
+  database: widgets
+  user: alexl70
+  password: AlexL70@Maria
+  host: 192.168.1.2
+  port: 3307
+  pool: 5
