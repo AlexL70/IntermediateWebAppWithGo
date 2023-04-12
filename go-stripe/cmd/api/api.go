@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/driver"
 )
 
 const version = "1.0.0"
@@ -52,9 +54,18 @@ func main() {
 
 	cfg.stripe.key = os.Getenv("STRIPE_KEY")
 	cfg.stripe.secret = os.Getenv("STRIPE_SECRET")
+	cfg.db.dsn = os.Getenv("WIDGETS_DSN")
 
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+
+	infoLog.Printf("Trying to connect to DB with DSN: %q\n", cfg.db.dsn)
+	conn, err := driver.OpenDB(cfg.db.dsn)
+	if err != nil {
+		errorLog.Fatal(err)
+	}
+	defer conn.Close()
+	infoLog.Println("Connected to DB!", conn)
 
 	app := &application{
 		config:   cfg,
@@ -63,7 +74,7 @@ func main() {
 		version:  version,
 	}
 
-	err := app.serve()
+	err = app.serve()
 	if err != nil {
 		log.Fatal(err)
 	}
