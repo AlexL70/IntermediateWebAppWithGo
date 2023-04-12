@@ -1,6 +1,10 @@
 package main
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/models"
+)
 
 func (app *application) VirtualTerminal(w http.ResponseWriter, r *http.Request) {
 	td := &templateData{
@@ -47,10 +51,18 @@ func (app *application) PaymentSucceeded(w http.ResponseWriter, r *http.Request)
 
 // ChargeOnce displays the page to buy one widget
 func (app *application) ChargeOnce(w http.ResponseWriter, r *http.Request) {
+	widget := models.Widget{
+		ID:             1,
+		Name:           "Custom Widget",
+		Description:    "A very nice widget",
+		InventoryLevel: 10,
+		Price:          1000,
+	}
 	td := &templateData{
 		StringMap: map[string]string{
 			"STRIPE_KEY": app.config.stripe.key,
 		},
+		Data: map[string]any{"widget": widget},
 	}
 	if err := app.renderTemplate(w, r, "buy-once", td, "stripe-js"); err != nil {
 		app.errorLog.Println(err)
