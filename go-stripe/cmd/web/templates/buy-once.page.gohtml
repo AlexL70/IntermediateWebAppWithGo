@@ -13,8 +13,8 @@ Buy one widget
     name="charge_form" id="charge_form"
     class="d-block needs-validation charge-form" autocomplete="off" novalidate="">
     <input type="hidden" name="product_id" value="{{$widget.ID}}" />
-    <input type="hidden" name="amount" value="{{$widget.Price}}" />
-    <h4 class="mt-2 mb-3 text-centered">{{$widget.Name}}: {{$widget.Price}}</h4>
+    <input type="hidden" id="amount" name="amount" value="{{$widget.Price}}" />
+    <h4 class="mt-2 mb-3 text-centered">{{$widget.Name}}: {{formatCurrency $widget.Price}}</h4>
     <p>{{$widget.Description}}</p>
     <hr>
     <div class="mb-3">
