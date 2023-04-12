@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/driver"
+	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/models"
 )
 
 const version = "1.0.0"
@@ -30,6 +31,7 @@ type application struct {
 	infoLog  *log.Logger
 	errorLog *log.Logger
 	version  string
+	DB       models.DBModel
 }
 
 func (app *application) serve() error {
@@ -65,13 +67,14 @@ func main() {
 		errorLog.Fatal(err)
 	}
 	defer conn.Close()
-	infoLog.Println("Connected to DB!", conn)
+	infoLog.Println("Connected to DB!")
 
 	app := &application{
 		config:   cfg,
 		infoLog:  infoLog,
 		errorLog: errorLog,
 		version:  version,
+		DB:       models.DBModel{DB: conn},
 	}
 
 	err = app.serve()
