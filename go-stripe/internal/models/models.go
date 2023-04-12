@@ -122,7 +122,29 @@ func (m *DBModel) InsertTransaction(txn Transaction) (int, error) {
 	}
 	id, err := result.LastInsertId()
 	if err != nil {
-		return 0, fmt.Errorf("error getting last inserted id: %w", err)
+		return 0, fmt.Errorf("error getting transaction's last inserted id: %w", err)
+	}
+	return int(id), nil
+}
+
+// InsertOrder inserts new order and returns it's id
+func (m *DBModel) InsertOrder(order Order) (int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	stmt := `
+		insert into orders (widget_id, transaction_id, status_id, quantity,
+			amount, created_at, updated_at)	
+		values(?,?,?,?,?,?,?)
+	`
+	result, err := m.DB.ExecContext(ctx, stmt, order.WidgetID, order.TransactionID, order.StatusID, order.Quantity,
+		order.Amount, time.Now(), time.Now())
+	if err != nil {
+		return 0, fmt.Errorf("error adding order: %w", err)
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("error getting order's last inserted id: %w", err)
 	}
 	return int(id), nil
 }
