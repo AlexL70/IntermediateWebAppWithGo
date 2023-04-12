@@ -91,16 +91,38 @@ func (m *DBModel) GetWidget(id int) (Widget, error) {
 	defer cancel()
 	var widget Widget
 
-	sql := `
+	stmt := `
 		SELECT  id, name, description, inventory_level, price, coalesce(image, ''), created_at, updated_at
 		  FROM  widgets
 		 WHERE  id = ?
 	`
-	row := m.DB.QueryRowContext(ctx, sql, id)
+	row := m.DB.QueryRowContext(ctx, stmt, id)
 	err := row.Scan(&widget.ID, &widget.Name, &widget.Description, &widget.InventoryLevel,
 		&widget.Price, &widget.Image, &widget.CreatedAt, &widget.UpdatedAt)
 	if err != nil {
 		return widget, fmt.Errorf("error reading widget from DB: %w", err)
 	}
 	return widget, nil
+}
+
+// InsertTransaction inserts new transaction and returns it's id
+func (m *DBModel) InsertTransaction(txn Transaction) (int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	stmt := `
+		insert into transactions (amount, currency, last_four, bank_return_code,
+			transaction_status_id, created_at, updated_at)	
+		values(?,?,?,?,?,?,?)
+	`
+	result, err := m.DB.ExecContext(ctx, stmt, txn.Amount, txn.Currency, txn.LastFour, txn.BankReturnCode,
+		txn.TransactionStatusID, time.Now(), time.Now())
+	if err != nil {
+		return 0, fmt.Errorf("error adding transaction: %w", err)
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("error getting last inserted id: %w", err)
+	}
+	return int(id), nil
 }
