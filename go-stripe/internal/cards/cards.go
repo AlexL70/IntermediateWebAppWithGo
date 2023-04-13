@@ -5,6 +5,7 @@ import (
 
 	"github.com/stripe/stripe-go/v74"
 	"github.com/stripe/stripe-go/v74/paymentintent"
+	"github.com/stripe/stripe-go/v74/paymentmethod"
 )
 
 type Card struct {
@@ -46,4 +47,26 @@ func (c *Card) createPaymentIntent(currency string, amount int) (*stripe.Payment
 		return nil, "", err
 	}
 	return pi, "", nil
+}
+
+// GetPaymentMethod gets payment method by payment intent id
+func (c *Card) GetPaymentMethod(s string) (*stripe.PaymentMethod, error) {
+	stripe.Key = c.Secret
+
+	pm, err := paymentmethod.Get(s, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error getting payment method: %w", err)
+	}
+	return pm, nil
+}
+
+// RetrievePaymentIntent returns existing PaymentIntent by id
+func (c *Card) RetrievePaymentIntent(id string) (*stripe.PaymentIntent, error) {
+	stripe.Key = c.Secret
+
+	pi, err := paymentintent.Get(id, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error getting payment intent by id: %w", err)
+	}
+	return pi, nil
 }
