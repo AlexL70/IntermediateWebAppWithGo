@@ -1,20 +1,24 @@
 package driver
 
 import (
-	"database/sql"
 	"fmt"
 
-	_ "github.com/go-sql-driver/mysql"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
-func OpenDB(dsn string) (*sql.DB, error) {
-	db, err := sql.Open("mysql", dsn)
+func OpenDB(dsn string) (*gorm.DB, error) {
+	db, err := gorm.Open(mysql.Open(dsn))
 	if err != nil {
-		return nil, fmt.Errorf("Error opening mySql DB: %w", err)
+		return nil, fmt.Errorf("error opening mySql DB: %w", err)
 	}
-	err = db.Ping()
+	sqlDB, err := db.DB()
 	if err != nil {
-		return nil, fmt.Errorf("Error pinging mySql DB: %w", err)
+		return nil, fmt.Errorf("error getting SQL DB from GORM DB: %w", err)
+	}
+	err = sqlDB.Ping()
+	if err != nil {
+		return nil, fmt.Errorf("error pinging mySql DB: %w", err)
 	}
 	return db, nil
 }

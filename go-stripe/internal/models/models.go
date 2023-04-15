@@ -2,14 +2,15 @@ package models
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // DBModel is the type for database connection values
 type DBModel struct {
-	DB *sql.DB
+	DB *gorm.DB
 }
 
 // Models is the wrapper for all models
@@ -18,7 +19,7 @@ type Models struct {
 }
 
 // NewModels returns a model type with database connection pool
-func NewModels(db *sql.DB) Models {
+func NewModels(db *gorm.DB) Models {
 	return Models{
 		DB: DBModel{DB: db},
 	}
@@ -103,17 +104,12 @@ func (m *DBModel) GetWidget(id int) (Widget, error) {
 	defer cancel()
 	var widget Widget
 
-	stmt := `
-		SELECT  id, name, description, inventory_level, price, coalesce(image, ''), created_at, updated_at
-		  FROM  widgets
-		 WHERE  id = ?
-	`
-	row := m.DB.QueryRowContext(ctx, stmt, id)
-	err := row.Scan(&widget.ID, &widget.Name, &widget.Description, &widget.InventoryLevel,
-		&widget.Price, &widget.Image, &widget.CreatedAt, &widget.UpdatedAt)
-	if err != nil {
+	tx := m.DB.WithContext(ctx)
+
+	if err := tx.First(&widget, id).Error; err != nil {
 		return widget, fmt.Errorf("error reading widget from DB: %w", err)
 	}
+
 	return widget, nil
 }
 
@@ -122,21 +118,11 @@ func (m *DBModel) InsertTransaction(txn Transaction) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	stmt := `
-		insert into transactions (amount, currency, last_four, bank_return_code,
-			transaction_status_id, created_at, updated_at)	
-		values(?,?,?,?,?,?,?)
-	`
-	result, err := m.DB.ExecContext(ctx, stmt, txn.Amount, txn.Currency, txn.LastFour, txn.BankReturnCode,
-		txn.TransactionStatusID, time.Now(), time.Now())
-	if err != nil {
+	tx := m.DB.WithContext(ctx).Create(txn)
+	if err := tx.Error; err != nil {
 		return 0, fmt.Errorf("error adding transaction: %w", err)
 	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, fmt.Errorf("error getting transaction's last inserted id: %w", err)
-	}
-	return int(id), nil
+	return int(txn.ID), nil
 }
 
 // InsertOrder inserts new order and returns it's id
@@ -144,19 +130,10 @@ func (m *DBModel) InsertOrder(order Order) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	stmt := `
-		insert into orders (widget_id, transaction_id, status_id, quantity,
-			amount, created_at, updated_at)	
-		values(?,?,?,?,?,?,?)
-	`
-	result, err := m.DB.ExecContext(ctx, stmt, order.WidgetID, order.TransactionID, order.StatusID, order.Quantity,
-		order.Amount, time.Now(), time.Now())
-	if err != nil {
+	tx := m.DB.WithContext(ctx).Create(order)
+	if err := tx.Error; err != nil {
 		return 0, fmt.Errorf("error adding order: %w", err)
 	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, fmt.Errorf("error getting order's last inserted id: %w", err)
-	}
-	return int(id), nil
+
+	return int(order.ID), nil
 }

@@ -72,7 +72,8 @@ func main() {
 	if err != nil {
 		errorLog.Fatal(err)
 	}
-	defer conn.Close()
+	sqlDB, _ := conn.DB()
+	defer sqlDB.Close()
 	infoLog.Println("Connected to DB!")
 
 	tc := map[string]*template.Template{}
