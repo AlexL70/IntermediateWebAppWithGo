@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// VirtualTerminal displays virtual terminal page
 func (app *application) VirtualTerminal(w http.ResponseWriter, r *http.Request) {
 	td := &templateData{}
 	if err := app.renderTemplate(w, r, "terminal", td, "stripe-js"); err != nil {
@@ -16,6 +17,15 @@ func (app *application) VirtualTerminal(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+// Home displays the home page
+func (app *application) Home(w http.ResponseWriter, r *http.Request) {
+	td := &templateData{}
+	if err := app.renderTemplate(w, r, "home", td); err != nil {
+		app.errorLog.Println(err)
+	}
+}
+
+// PaymentSucceeded displays payment succeeded page
 func (app *application) PaymentSucceeded(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
@@ -55,6 +65,10 @@ func (app *application) PaymentSucceeded(w http.ResponseWriter, r *http.Request)
 	amountInt, _ := strconv.Atoi(paymentAmount)
 	amountStr := fmt.Sprintf("$%2.f", float32(amountInt)/100)
 
+	// create a new customer
+	// create a new order
+	// create a new transaction
+
 	data := map[string]any{
 		"cardHolder":       cardHolder,
 		"email":            email,
@@ -67,6 +81,8 @@ func (app *application) PaymentSucceeded(w http.ResponseWriter, r *http.Request)
 		"expiry_year":      expiryYear,
 		"bank_return_code": pi.LatestCharge.ID,
 	}
+
+	// should write this data to session and then redirect user to the new page
 
 	if err := app.renderTemplate(w, r, "succeeded", &templateData{
 		Data: data,

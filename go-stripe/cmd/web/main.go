@@ -11,10 +11,13 @@ import (
 
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/driver"
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/models"
+	"github.com/alexedwards/scs/v2"
 )
 
 const version = "1.0.0"
 const cssVersion = "1"
+
+var session *scs.SessionManager
 
 type config struct {
 	port int
@@ -36,6 +39,7 @@ type application struct {
 	templateCache map[string]*template.Template
 	version       string
 	DB            models.DBModel
+	Session       *scs.Session
 }
 
 func (app *application) serve() error {
@@ -76,6 +80,10 @@ func main() {
 	defer sqlDB.Close()
 	infoLog.Println("Connected to DB!")
 
+	// set up session
+	session = scs.New()
+	session.Lifetime = 24 * time.Hour
+
 	tc := map[string]*template.Template{}
 
 	app := &application{
@@ -85,6 +93,7 @@ func main() {
 		templateCache: tc,
 		version:       version,
 		DB:            models.DBModel{DB: conn},
+		Session:       session,
 	}
 
 	err = app.serve()
