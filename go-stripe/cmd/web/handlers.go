@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/cards"
+	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/models"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -34,12 +36,18 @@ func (app *application) PaymentSucceeded(w http.ResponseWriter, r *http.Request)
 	}
 
 	// read posted data
-	cardHolder := r.Form.Get("cardholder_name")
+	firstName := r.Form.Get("first_name")
+	lastName := r.Form.Get("last_name")
 	email := r.Form.Get("cardholder_email")
 	paymentIntent := r.Form.Get(("payment_intent"))
 	paymentMethod := r.Form.Get(("payment_method"))
 	paymentAmount := r.Form.Get(("payment_amount"))
 	paymentCurrency := r.Form.Get(("payment_currency"))
+	widgetID, err := strconv.Atoi(r.Form.Get("product_id"))
+	if err != nil {
+		app.errorLog.Println(fmt.Errorf("Error converting widget id: %w", err))
+		return
+	}
 
 	card := cards.Card{
 		Secret:   app.config.stripe.secret,
@@ -62,15 +70,56 @@ func (app *application) PaymentSucceeded(w http.ResponseWriter, r *http.Request)
 	lastFour := pm.Card.Last4
 	expiryMonth := pm.Card.ExpMonth
 	expiryYear := pm.Card.ExpYear
-	amountInt, _ := strconv.Atoi(paymentAmount)
+	amountInt, err := strconv.Atoi(paymentAmount)
+	if err != nil {
+		app.errorLog.Println(fmt.Errorf("Error converting amount: %w", err))
+		return
+	}
 	amountStr := fmt.Sprintf("$%2.f", float32(amountInt)/100)
 
 	// create a new customer
-	// create a new order
+	customerID, err := app.SaveCustomer(firstName, lastName, email)
+	if err != nil {
+		app.errorLog.Println(err)
+		return
+	}
+
 	// create a new transaction
+	txn := models.Transaction{
+		Amount:              amountInt,
+		Currency:            paymentCurrency,
+		LastFour:            lastFour,
+		ExpiryMonth:         int(expiryMonth),
+		ExpiryYear:          int(expiryYear),
+		BankReturnCode:      pi.LatestCharge.ID,
+		TransactionStatusID: 2, // Cleared
+	}
+	txnID, err := app.SaveTransaction(txn)
+	if err != nil {
+		app.errorLog.Println(err)
+		return
+	}
+
+	// create a new order
+	order := models.Order{
+		WidgetID:      widgetID,
+		TransactionID: txnID,
+		CustomerID:    customerID,
+		StatusID:      1, // Cleared
+		Quantity:      1,
+		Amount:        amountInt,
+		DBEntity: models.DBEntity{
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+	}
+	_, err = app.SaveOrder(order)
+	if err != nil {
+		app.errorLog.Println(err)
+		return
+	}
 
 	data := map[string]any{
-		"cardHolder":       cardHolder,
 		"email":            email,
 		"pi":               paymentIntent,
 		"pm":               paymentMethod,
@@ -90,6 +139,23 @@ func (app *application) PaymentSucceeded(w http.ResponseWriter, r *http.Request)
 		app.errorLog.Println(err)
 		return
 	}
+}
+
+func (app *application) SaveCustomer(firstName, lastName, email string) (int, error) {
+	customer := models.Customer{
+		FirstName: firstName,
+		LastName:  lastName,
+		Email:     email,
+	}
+	return app.DB.InsertCustomer(customer)
+}
+
+func (app *application) SaveTransaction(txn models.Transaction) (int, error) {
+	return app.DB.InsertTransaction(txn)
+}
+
+func (app *application) SaveOrder(order models.Order) (int, error) {
+	return app.DB.InsertOrder(order)
 }
 
 // ChargeOnce displays the page to buy one widget
