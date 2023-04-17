@@ -58,7 +58,7 @@ func (app *application) serve() error {
 }
 
 func main() {
-	gob.Register(map[string]any{})
+	gob.Register(TransactionData{})
 
 	var cfg config
 
