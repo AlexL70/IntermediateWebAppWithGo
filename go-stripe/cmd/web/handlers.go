@@ -137,7 +137,15 @@ func (app *application) PaymentSucceeded(w http.ResponseWriter, r *http.Request)
 
 	// should write this data to session and then redirect user to the new page
 
-	if err := app.renderTemplate(w, r, "succeeded", &templateData{
+	app.Session.Put(r.Context(), "receipt", data)
+
+	http.Redirect(w, r, "/receipt", http.StatusSeeOther)
+}
+
+func (app *application) Receipt(w http.ResponseWriter, r *http.Request) {
+	data := app.Session.Pop(r.Context(), "receipt").(map[string]any)
+
+	if err := app.renderTemplate(w, r, "receipt", &templateData{
 		Data: data,
 	}); err != nil {
 		app.errorLog.Println(err)
