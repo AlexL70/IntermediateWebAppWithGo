@@ -120,6 +120,8 @@ func (app *application) PaymentSucceeded(w http.ResponseWriter, r *http.Request)
 	}
 
 	data := map[string]any{
+		"first_name":       firstName,
+		"last_name":        lastName,
 		"email":            email,
 		"pi":               paymentIntent,
 		"pm":               paymentMethod,

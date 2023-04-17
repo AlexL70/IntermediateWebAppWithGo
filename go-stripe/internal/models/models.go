@@ -28,6 +28,7 @@ func NewModels(db *gorm.DB) Models {
 
 type IDBEntity interface {
 	GetID() int
+	SetCreated()
 }
 type DBEntity struct {
 	ID        int       `json:"id"`
@@ -37,6 +38,11 @@ type DBEntity struct {
 
 func (e DBEntity) GetID() int {
 	return e.ID
+}
+
+func (e DBEntity) SetCreated() {
+	e.CreatedAt = time.Now()
+	e.UpdatedAt = time.Now()
 }
 
 // Widget is the type for all widgets
@@ -110,23 +116,24 @@ func (m *DBModel) GetWidget(id int) (Widget, error) {
 
 // InsertTransaction inserts new transaction and returns it's id
 func (m *DBModel) InsertTransaction(txn Transaction) (int, error) {
-	return insertEntity(txn, m)
+	return insertEntity(&txn, m)
 }
 
 // InsertOrder inserts new order and returns it's id
 func (m *DBModel) InsertOrder(order Order) (int, error) {
-	return insertEntity(order, m)
+	return insertEntity(&order, m)
 }
 
 // InsertCustomer inserts new order and returns it's id
 func (m *DBModel) InsertCustomer(customer Customer) (int, error) {
-	return insertEntity(customer, m)
+	return insertEntity(&customer, m)
 }
 
 func insertEntity(entity IDBEntity, m *DBModel) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
+	entity.SetCreated()
 	tx := m.DB.WithContext(ctx).Create(entity)
 	if err := tx.Error; err != nil {
 		return 0, fmt.Errorf("error adding %s: %w", reflect.TypeOf(entity), err)
