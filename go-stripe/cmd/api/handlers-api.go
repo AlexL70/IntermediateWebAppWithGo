@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -10,8 +11,12 @@ import (
 )
 
 type stripePayload struct {
-	Currency string `json:"currency"`
-	Amount   string `json:"amount"`
+	Currency      string `json:"currency"`
+	Amount        string `json:"amount"`
+	PaymentMethod string `json:"payment_method"`
+	Email         string `json:"email"`
+	LastFour      string `json:"last_four"`
+	Plan          string `json:"plan"`
 }
 
 type jsonResponse struct {
@@ -85,6 +90,32 @@ func (app *application) GetWidgetById(w http.ResponseWriter, r *http.Request) {
 		app.errorLog.Println(err)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(out)
+}
+
+func (app *application) CreateCustomerAndSubscribeToPlan(w http.ResponseWriter, r *http.Request) {
+	var data stripePayload
+	err := json.NewDecoder(r.Body).Decode(&data)
+	if err != nil {
+		app.errorLog.Println(fmt.Errorf("error decoding data: %w", err))
+		return
+	}
+	app.infoLog.Println(data.Email, data.LastFour, data.PaymentMethod, data.Plan)
+
+	okay := true
+	msg := ""
+	resp := jsonResponse{
+		OK:      okay,
+		Message: msg,
+	}
+
+	out, err := json.MarshalIndent(resp, "", "  ")
+	if err != nil {
+		app.errorLog.Println("error marshalling response: %w", err)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(out)
 }
