@@ -254,3 +254,15 @@ func (app *application) ChargeOnce(w http.ResponseWriter, r *http.Request) {
 		app.errorLog.Println(err)
 	}
 }
+
+func (app *application) BronzePlan(w http.ResponseWriter, r *http.Request) {
+	intMap := map[string]int{
+		"plan_id": 1,
+	}
+	if err := app.renderTemplate(w, r, "bronze-plan", &templateData{
+		IntMap: intMap,
+	}); err != nil {
+		app.errorLog.Println(fmt.Errorf("error rendering template: %w", err))
+		return
+	}
+}
