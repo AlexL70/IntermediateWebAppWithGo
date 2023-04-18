@@ -53,6 +53,8 @@ type Widget struct {
 	InventoryLevel int    `json:"inventory_level"`
 	Price          int    `json:"price"`
 	Image          string `json:"image"`
+	IsRecurring    bool   `json:"is_recurring"`
+	PlanID         string `json:"plan_id"`
 }
 
 // Order is the type for all orders

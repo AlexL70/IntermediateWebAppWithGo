@@ -256,11 +256,16 @@ func (app *application) ChargeOnce(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) BronzePlan(w http.ResponseWriter, r *http.Request) {
-	intMap := map[string]int{
-		"plan_id": 1,
+	widget, err := app.DB.GetWidget(2)
+	if err != nil {
+		app.errorLog.Println(err)
+		return
+	}
+	data := map[string]any{
+		"widget": widget,
 	}
 	if err := app.renderTemplate(w, r, "bronze-plan", &templateData{
-		IntMap: intMap,
+		Data: data,
 	}); err != nil {
 		app.errorLog.Println(fmt.Errorf("error rendering template: %w", err))
 		return
