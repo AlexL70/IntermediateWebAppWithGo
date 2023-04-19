@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/cards"
+	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/models"
 	"github.com/go-chi/chi/v5"
 	"github.com/stripe/stripe-go/v74"
 )
@@ -17,8 +18,8 @@ type stripePayload struct {
 	PaymentMethod string `json:"payment_method"`
 	Email         string `json:"email"`
 	CardBrand     string `json:"card_brand"`
-	ExpiryMonth   string `json:"exp_month"`
-	ExpiryYear    string `json:"exp_year"`
+	ExpiryMonth   int    `json:"exp_month"`
+	ExpiryYear    int    `json:"exp_year"`
 	LastFour      string `json:"last_four"`
 	Plan          string `json:"plan"`
 	ProductID     string `json:"product_id"`
@@ -118,26 +119,78 @@ func (app *application) CreateCustomerAndSubscribeToPlan(w http.ResponseWriter, 
 
 	okay := true
 	var subscription *stripe.Subscription
-
 	stripeCustomer, msg, err := card.CreateCustomer(data.PaymentMethod, data.Email)
-	if err != nil {
-		app.errorLog.Println(err)
-		okay = false
-	}
-	if okay {
+	{
+		if err != nil {
+			app.errorLog.Println(err)
+			okay = false
+			goto FINISH
+		}
 		subscription, err = card.SubscribeToPlan(stripeCustomer, data.Plan, data.Email, data.LastFour, "")
 		if err != nil {
 			app.errorLog.Println(err)
 			okay = false
+			goto FINISH
 		} else {
 			app.infoLog.Println("subscription id is", subscription.ID)
 		}
+
+		productID, err := strconv.Atoi(data.ProductID)
+		if err != nil {
+			err = fmt.Errorf("error converting ProductID to an int: %w", err)
+			app.errorLog.Println(err)
+			okay = false
+			goto FINISH
+		}
+		customerID, err := app.SaveCustomer(data.FirstName, data.LastName, data.Email)
+		if err != nil {
+			err = fmt.Errorf("error saving customer: %w", err)
+			app.errorLog.Println(err)
+			okay = false
+			goto FINISH
+		}
+		amount, err := strconv.Atoi(data.Amount)
+		if err != nil {
+			app.errorLog.Println(err)
+			okay = false
+			goto FINISH
+		}
+		txn := models.Transaction{
+			Amount:              amount,
+			Currency:            "usd",
+			LastFour:            data.LastFour,
+			ExpiryMonth:         data.ExpiryMonth,
+			ExpiryYear:          data.ExpiryYear,
+			TransactionStatusID: 2,
+		}
+		txnID, err := app.SaveTransaction(txn)
+		if err != nil {
+			app.errorLog.Println(err)
+			okay = false
+			goto FINISH
+		}
+		order := models.Order{
+			WidgetID:      productID,
+			TransactionID: txnID,
+			CustomerID:    customerID,
+			StatusID:      1,
+			Quantity:      1,
+			Amount:        amount,
+		}
+		_, err = app.SaveOrder(order)
+		if err != nil {
+			app.errorLog.Println(err)
+			okay = false
+			goto FINISH
+		}
 	}
 
+FINISH:
 	if okay {
-
+		msg = "Transaction successful!"
+	} else if !okay && msg == "" {
+		msg = err.Error()
 	}
-
 	resp := jsonResponse{
 		OK:      okay,
 		Message: msg,
@@ -151,4 +204,21 @@ func (app *application) CreateCustomerAndSubscribeToPlan(w http.ResponseWriter, 
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(out)
+}
+
+func (app *application) SaveCustomer(firstName, lastName, email string) (int, error) {
+	customer := models.Customer{
+		FirstName: firstName,
+		LastName:  lastName,
+		Email:     email,
+	}
+	return app.DB.InsertCustomer(customer)
+}
+
+func (app *application) SaveTransaction(txn models.Transaction) (int, error) {
+	return app.DB.InsertTransaction(txn)
+}
+
+func (app *application) SaveOrder(order models.Order) (int, error) {
+	return app.DB.InsertOrder(order)
 }
