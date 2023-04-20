@@ -23,10 +23,41 @@
     <a id="login-button" href="javascript:void(0)" class="btn btn-primary" onclick="login()">
         Login</a>
 </form>
+
 {{end}}
 {{define "js"}}
 <script>
 function login() {
+    let form = document.getElementById("login_form")
+    if (form.checkValidity() === false) {
+        this.event.preventDefault();
+        this.event.stopPropagation();
+        form.classList.add("was-validated");
+        return;
+    }
+    form.classList.add("was-validated");
+
+    let payload = {
+        email: document.getElementById("email").value,
+        password: document.getElementById("password").value,
+    };
+
+    const requestOptions = {
+        method: "POST",
+        headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+    };
+
+    const base_url = {{index .API}};
+    fetch(`${base_url}/api/authenticate`, requestOptions)
+        .then(resp => resp.json())
+        .then(resp => {
+            console.log(response);
+        });
+ 
 }
 </script>
 {{end}}
