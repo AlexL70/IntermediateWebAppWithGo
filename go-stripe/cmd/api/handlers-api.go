@@ -206,6 +206,31 @@ FINISH:
 	w.Write(out)
 }
 
+func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) {
+	var userInput struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	err := app.readJSON(w, r, &userInput)
+	if err != nil {
+		mErr := app.BadRequest(w, r, err)
+		if mErr != nil {
+			app.errorLog.Println(mErr)
+		}
+		return
+	}
+
+	var payload = struct {
+		Error   bool   `json:"error"`
+		Message string `json:"message"`
+	}{false, "Success"}
+	mErr := app.MarshalAndSendBack(w, payload)
+	if mErr != nil {
+		app.errorLog.Println(mErr)
+	}
+}
+
 func (app *application) SaveCustomer(firstName, lastName, email string) (int, error) {
 	customer := models.Customer{
 		FirstName: firstName,

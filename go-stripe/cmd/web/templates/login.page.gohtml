@@ -55,7 +55,7 @@ function login() {
     fetch(`${base_url}/api/authenticate`, requestOptions)
         .then(resp => resp.json())
         .then(resp => {
-            console.log(response);
+            console.log(resp);
         });
  
 }
