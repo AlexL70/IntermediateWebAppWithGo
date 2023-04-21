@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -114,7 +115,7 @@ type Customer struct {
 // GetWidget fetches Widget entity from DB by id
 func (m *DBModel) GetWidget(id int) (Widget, error) {
 	var widget Widget
-	err := getEntity(id, m, &widget)
+	err := getEntityById(id, m, &widget)
 	return widget, err
 }
 
@@ -133,6 +134,20 @@ func (m *DBModel) InsertCustomer(customer Customer) (int, error) {
 	return insertEntity(&customer, m)
 }
 
+// GetUserByEmail gets a user by email address
+func (m *DBModel) GetUserByEmail(email string) (User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	tx := m.DB.WithContext(ctx)
+	user := User{}
+	result := tx.Where(&User{Email: strings.ToLower(email)}).First(&user)
+	if result.Error != nil {
+		return user, fmt.Errorf("error searching user by email: %w", result.Error)
+	}
+	return user, nil
+}
+
 func insertEntity(entity IDBEntity, m *DBModel) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -146,7 +161,7 @@ func insertEntity(entity IDBEntity, m *DBModel) (int, error) {
 	return entity.GetID(), nil
 }
 
-func getEntity(id int, m *DBModel, entity any) error {
+func getEntityById(id int, m *DBModel, entity any) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
