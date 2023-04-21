@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -208,7 +207,6 @@ FINISH:
 }
 
 func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) {
-	const authFailedStr = "authentication failed; check your credentials and try again"
 	var userInput struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -227,7 +225,7 @@ func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) 
 	user, err := app.DB.GetUserByEmail(userInput.Email)
 	if err != nil {
 		app.errorLog.Println(err)
-		app.BadRequest(w, r, errors.New(authFailedStr))
+		app.invalidCredentials(w)
 		return
 	}
 	app.infoLog.Println(user)
@@ -238,10 +236,10 @@ func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) 
 
 	// send response
 
-	var payload = struct {
-		Error   bool   `json:"error"`
-		Message string `json:"message"`
-	}{false, "Success"}
+	payload := errJsonPayload{
+		Error:   false,
+		Message: "Success",
+	}
 
 	mErr := app.writeJson(w, http.StatusOK, payload)
 	if mErr != nil {

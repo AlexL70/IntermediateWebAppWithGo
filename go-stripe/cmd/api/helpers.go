@@ -8,6 +8,12 @@ import (
 	"net/http"
 )
 
+// errJsonPayload is for returning error/success information to client
+type errJsonPayload = struct {
+	Error   bool   `json:"error"`
+	Message string `json:"message"`
+}
+
 // writeJson writes arbitrary data out (to response writer) as json
 func (app *application) writeJson(w http.ResponseWriter, status int, data any, headers ...http.Header) error {
 	out, err := json.MarshalIndent(data, "", "  ")
@@ -47,10 +53,19 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, data an
 }
 
 func (app *application) BadRequest(w http.ResponseWriter, r *http.Request, err error) error {
-	var payload = struct {
-		Error   bool   `json:"error"`
-		Message string `json:"message"`
-	}{true, err.Error()}
+	payload := errJsonPayload{
+		Error:   true,
+		Message: err.Error(),
+	}
 
 	return app.writeJson(w, http.StatusBadRequest, payload)
+}
+
+func (app *application) invalidCredentials(w http.ResponseWriter) error {
+	payload := errJsonPayload{
+		Error:   true,
+		Message: "authentication failed; check your credentials and try again",
+	}
+
+	return app.writeJson(w, http.StatusUnauthorized, payload)
 }
