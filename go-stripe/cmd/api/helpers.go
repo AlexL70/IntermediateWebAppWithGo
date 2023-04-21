@@ -8,6 +8,26 @@ import (
 	"net/http"
 )
 
+// writeJson writes arbitrary data out (to response writer) as json
+func (app *application) writeJson(w http.ResponseWriter, status int, data any, headers ...http.Header) error {
+	out, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return fmt.Errorf("error marshalling payload: %w", err)
+	}
+
+	if len(headers) > 0 {
+		for k, v := range headers[0] {
+			w.Header()[k] = v
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	w.Write(out)
+	return nil
+}
+
+// readJSON reads json request body into data. It only accepts single json value in the body
 func (app *application) readJSON(w http.ResponseWriter, r *http.Request, data any) error {
 	maxBytes := 1048576
 
@@ -32,16 +52,5 @@ func (app *application) BadRequest(w http.ResponseWriter, r *http.Request, err e
 		Message string `json:"message"`
 	}{true, err.Error()}
 
-	return app.MarshalAndSendBack(w, payload)
-}
-
-func (app *application) MarshalAndSendBack(w http.ResponseWriter, data any) error {
-	out, err := json.MarshalIndent(data, "", "  ")
-	if err != nil {
-		return fmt.Errorf("error marshalling payload: %w", err)
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(out)
-	return nil
+	return app.writeJson(w, http.StatusBadRequest, payload)
 }

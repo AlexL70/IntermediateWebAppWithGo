@@ -225,7 +225,7 @@ func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) 
 		Error   bool   `json:"error"`
 		Message string `json:"message"`
 	}{false, "Success"}
-	mErr := app.MarshalAndSendBack(w, payload)
+	mErr := app.writeJson(w, http.StatusOK, payload)
 	if mErr != nil {
 		app.errorLog.Println(mErr)
 	}
