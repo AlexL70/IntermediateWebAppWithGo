@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/cards"
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/models"
@@ -234,10 +235,7 @@ func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) 
 	passwordMatches, err := app.passwordMatches(user.Password, userInput.Password)
 	if err != nil {
 		app.errorLog.Println(err)
-		app.writeJson(w, http.StatusInternalServerError, errJsonPayload{
-			Error:   true,
-			Message: "internal server error; if it repeats, please call the support",
-		})
+		app.internalError(w)
 		return
 	}
 	if !passwordMatches {
@@ -247,12 +245,18 @@ func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// generate the token
+	token, err := models.GenerateToken(user.ID, 12*time.Hour, models.ScopeAuthentication)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.internalError(w)
+		return
+	}
 
 	// send response
-
-	payload := errJsonPayload{
+	payload := authJsonPayload{
 		Error:   false,
-		Message: "Success",
+		Message: fmt.Sprintf("Token for %q created.", userInput.Email),
+		Token:   *token,
 	}
 
 	mErr := app.writeJson(w, http.StatusOK, payload)

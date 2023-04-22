@@ -7,13 +7,15 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/models"
 	"golang.org/x/crypto/bcrypt"
 )
 
-// errJsonPayload is for returning error/success information to client
-type errJsonPayload = struct {
-	Error   bool   `json:"error"`
-	Message string `json:"message"`
+// authJsonPayload is for returning error/success information to client
+type authJsonPayload = struct {
+	Error   bool         `json:"error"`
+	Message string       `json:"message"`
+	Token   models.Token `json:"authentication_token"`
 }
 
 // writeJson writes arbitrary data out (to response writer) as json
@@ -55,7 +57,7 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, data an
 }
 
 func (app *application) BadRequest(w http.ResponseWriter, r *http.Request, err error) error {
-	payload := errJsonPayload{
+	payload := authJsonPayload{
 		Error:   true,
 		Message: err.Error(),
 	}
@@ -64,12 +66,20 @@ func (app *application) BadRequest(w http.ResponseWriter, r *http.Request, err e
 }
 
 func (app *application) invalidCredentials(w http.ResponseWriter) error {
-	payload := errJsonPayload{
+	payload := authJsonPayload{
 		Error:   true,
 		Message: "authentication failed; check your credentials and try again",
 	}
 
 	return app.writeJson(w, http.StatusUnauthorized, payload)
+}
+
+func (app *application) internalError(w http.ResponseWriter) error {
+	payload := authJsonPayload{
+		Error:   true,
+		Message: "internal server error; if it repeats, please contact the support",
+	}
+	return app.writeJson(w, http.StatusInternalServerError, payload)
 }
 
 func (app *application) passwordMatches(hash, password string) (bool, error) {
