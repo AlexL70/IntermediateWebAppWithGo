@@ -158,6 +158,16 @@ func (m *DBModel) GetUserByEmail(email string) (User, error) {
 }
 
 func (m *DBModel) InsertToken(t *SToken, u User) (int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	tx := m.DB.WithContext(ctx)
+
+	// Delete all existing tokens for the user first
+	err := tx.Where(&Token{UserID: u.ID}).Delete(&Token{}).Error
+	if err != nil {
+		return 0, fmt.Errorf("error deleting old tokens: %w", err)
+	}
+
 	token := Token{
 		UserID:    u.ID,
 		Name:      fmt.Sprintf("%s %s", u.FirstName, u.LastName),

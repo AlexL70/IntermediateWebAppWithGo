@@ -3,6 +3,7 @@
     Login
 {{end}}
 {{define "content"}}
+<div class="alert alert-danger text-center d-none" id="login-messages"></div>
 <form action="" method="post"
     name="login_form" id="login_form"
     class="d-block needs-validation login-form" autocomplete="off" novalidate="">
@@ -27,6 +28,22 @@
 {{end}}
 {{define "js"}}
 <script>
+let loginMessages = document.getElementById("login-messages")
+
+function showError(msg) {
+    loginMessages.classList.add("alert-danger");
+    loginMessages.classList.remove("alert-success");
+    loginMessages.classList.remove("d-none");
+    loginMessages.innerText = msg;
+}
+
+function showSuccess() {
+    loginMessages.classList.add("alert-success");
+    loginMessages.classList.remove("alert-danger");
+    loginMessages.classList.remove("d-none");
+    loginMessages.innerText = "Logged in successfully!";
+}
+
 function login() {
     let form = document.getElementById("login_form")
     if (form.checkValidity() === false) {
@@ -55,6 +72,13 @@ function login() {
     fetch(`${base_url}/api/authenticate`, requestOptions)
         .then(resp => resp.json())
         .then(resp => {
+            if (resp.error === false) {
+                localStorage.setItem("token", resp.authentication_token.token);
+                localStorage.setItem("token_expiry", resp.authentication_token.expiry);
+                showSuccess();
+            } else {
+                showError(resp.message ?? "Unknown error!")
+            }
             console.log(resp);
         });
  
