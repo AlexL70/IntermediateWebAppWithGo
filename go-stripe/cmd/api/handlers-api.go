@@ -231,6 +231,20 @@ func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) 
 	app.infoLog.Println(user)
 
 	// validate password; send error if invalid password
+	passwordMatches, err := app.passwordMatches(user.Password, userInput.Password)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.writeJson(w, http.StatusInternalServerError, errJsonPayload{
+			Error:   true,
+			Message: "internal server error; if it repeats, please call the support",
+		})
+		return
+	}
+	if !passwordMatches {
+		app.infoLog.Printf("Incorrect credentials entered by: %s\n", userInput.Email)
+		app.invalidCredentials(w)
+		return
+	}
 
 	// generate the token
 

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // errJsonPayload is for returning error/success information to client
@@ -68,4 +70,17 @@ func (app *application) invalidCredentials(w http.ResponseWriter) error {
 	}
 
 	return app.writeJson(w, http.StatusUnauthorized, payload)
+}
+
+func (app *application) passwordMatches(hash, password string) (bool, error) {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	if err != nil {
+		switch {
+		case errors.Is(err, bcrypt.ErrMismatchedHashAndPassword):
+			return false, nil
+		default:
+			return false, fmt.Errorf("error checking password: %w", err)
+		}
+	}
+	return true, nil
 }
