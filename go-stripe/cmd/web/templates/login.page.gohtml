@@ -76,6 +76,7 @@ function login() {
                 localStorage.setItem("token", resp.authentication_token.token);
                 localStorage.setItem("token_expiry", resp.authentication_token.expiry);
                 showSuccess();
+                location.href = "/";
             } else {
                 showError(resp.message ?? "Unknown error!")
             }
