@@ -104,6 +104,15 @@ type User struct {
 	Password  string `json:"password"`
 }
 
+// Token is a type for saving tokens (SToken) to DB
+type Token struct {
+	DBEntity
+	UserID    int
+	Name      string
+	Email     string
+	TokenHash []byte
+}
+
 // Customer is a type for customers
 type Customer struct {
 	DBEntity
@@ -146,6 +155,17 @@ func (m *DBModel) GetUserByEmail(email string) (User, error) {
 		return user, fmt.Errorf("error searching user by email: %w", result.Error)
 	}
 	return user, nil
+}
+
+func (m *DBModel) InsertToken(t *SToken, u User) (int, error) {
+	token := Token{
+		UserID:    u.ID,
+		Name:      fmt.Sprintf("%s %s", u.FirstName, u.LastName),
+		Email:     u.Email,
+		TokenHash: t.Hash,
+	}
+
+	return insertEntity(&token, m)
 }
 
 func insertEntity(entity IDBEntity, m *DBModel) (int, error) {

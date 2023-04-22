@@ -13,9 +13,9 @@ import (
 
 // authJsonPayload is for returning error/success information to client
 type authJsonPayload = struct {
-	Error   bool         `json:"error"`
-	Message string       `json:"message"`
-	Token   models.Token `json:"authentication_token"`
+	Error   bool          `json:"error"`
+	Message string        `json:"message"`
+	Token   models.SToken `json:"authentication_token"`
 }
 
 // writeJson writes arbitrary data out (to response writer) as json

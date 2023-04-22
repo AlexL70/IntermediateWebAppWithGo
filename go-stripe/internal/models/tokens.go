@@ -12,8 +12,8 @@ const (
 	ScopeAuthentication = "authentication"
 )
 
-// Token is a type for authentication tokens
-type Token struct {
+// SToken is a type for authentication tokens
+type SToken struct {
 	PlainText string    `json:"token"`
 	UserID    int64     `json:"-"`
 	Hash      []byte    `json:"-"`
@@ -23,8 +23,8 @@ type Token struct {
 
 // GenerateToken generates token for user identified by userID that lasts for ttl
 // and returns it or possibly an error
-func GenerateToken(userID int, ttl time.Duration, scope string) (*Token, error) {
-	token := &Token{
+func GenerateToken(userID int, ttl time.Duration, scope string) (*SToken, error) {
+	token := &SToken{
 		UserID: int64(userID),
 		Expiry: time.Now().Add(ttl),
 		Scope:  scope,
