@@ -274,10 +274,30 @@ func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) 
 }
 
 func (app *application) CheckAuthentication(w http.ResponseWriter, r *http.Request) {
-	err := app.invalidCredentials(w)
+	// validate the token and get associated user
+	user, err := app.authenticateToken(r)
+	//	sent back "invalid credentials" if token is not validated
 	if err != nil {
-		app.errorLog.Println(err)
+		mErr := app.invalidCredentials(w)
+		if mErr != nil {
+			app.errorLog.Println(mErr)
+		}
+		return
 	}
+	// otherwise send back success response
+	payload := authJsonPayload{
+		Error:   false,
+		Message: fmt.Sprintf("Authenticated user: %s", user.Email),
+	}
+	mErr := app.writeJson(w, http.StatusOK, payload)
+	if mErr != nil {
+		app.errorLog.Println(mErr)
+	}
+}
+
+func (app *application) authenticateToken(r *http.Request) (*models.User, error) {
+	var u models.User
+	return &u, nil
 }
 
 func (app *application) SaveCustomer(firstName, lastName, email string) (int, error) {
