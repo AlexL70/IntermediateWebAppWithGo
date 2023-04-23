@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"reflect"
 	"strings"
@@ -155,6 +156,25 @@ func (m *DBModel) GetUserByEmail(email string) (User, error) {
 		return user, fmt.Errorf("error searching user by email: %w", result.Error)
 	}
 	return user, nil
+}
+
+func (m *DBModel) GetUserForToken(token string) (*User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	tx := m.DB.WithContext(ctx)
+	var t Token
+	tokenHash := sha256.Sum256([]byte(token))
+	err := tx.Where(&Token{TokenHash: tokenHash[:]}).First(&t).Error
+	if err != nil {
+		return nil, fmt.Errorf("error getting token from DB: %w", err)
+	}
+	var user User
+	err = getEntityById(t.UserID, m, &user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 func (m *DBModel) InsertToken(t *SToken, u User) (int, error) {

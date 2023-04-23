@@ -299,7 +299,6 @@ func (app *application) CheckAuthentication(w http.ResponseWriter, r *http.Reque
 }
 
 func (app *application) authenticateToken(r *http.Request) (*models.User, error) {
-	var u models.User
 	// get and parse authorization header
 	authorizationHeader := r.Header.Get("Authorization")
 	if authorizationHeader == "" {
@@ -314,7 +313,11 @@ func (app *application) authenticateToken(r *http.Request) (*models.User, error)
 		return nil, errors.New("wrong size of an authentication token")
 	}
 	// get the user from the tokens table
-	return &u, nil
+	user, err := app.DB.GetUserForToken(token)
+	if err != nil {
+		return nil, errors.New("no matching user found")
+	}
+	return user, nil
 }
 
 func (app *application) SaveCustomer(firstName, lastName, email string) (int, error) {
