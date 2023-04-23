@@ -2,9 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/cards"
@@ -278,6 +280,7 @@ func (app *application) CheckAuthentication(w http.ResponseWriter, r *http.Reque
 	user, err := app.authenticateToken(r)
 	//	sent back "invalid credentials" if token is not validated
 	if err != nil {
+		app.errorLog.Println(err)
 		mErr := app.invalidCredentials(w)
 		if mErr != nil {
 			app.errorLog.Println(mErr)
@@ -297,6 +300,20 @@ func (app *application) CheckAuthentication(w http.ResponseWriter, r *http.Reque
 
 func (app *application) authenticateToken(r *http.Request) (*models.User, error) {
 	var u models.User
+	// get and parse authorization header
+	authorizationHeader := r.Header.Get("Authorization")
+	if authorizationHeader == "" {
+		return nil, errors.New("authorization error; no authorization header in the request")
+	}
+	headerParts := strings.Split(authorizationHeader, " ")
+	if len(headerParts) != 2 || headerParts[0] != "Bearer" {
+		return nil, errors.New("bad authorization header's format")
+	}
+	token := headerParts[1]
+	if len(token) != 26 {
+		return nil, errors.New("wrong size of an authentication token")
+	}
+	// get the user from the tokens table
 	return &u, nil
 }
 
