@@ -273,6 +273,13 @@ func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+func (app *application) CheckAuthentication(w http.ResponseWriter, r *http.Request) {
+	err := app.invalidCredentials(w)
+	if err != nil {
+		app.errorLog.Println(err)
+	}
+}
+
 func (app *application) SaveCustomer(firstName, lastName, email string) (int, error) {
 	customer := models.Customer{
 		FirstName: firstName,

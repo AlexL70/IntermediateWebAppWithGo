@@ -23,6 +23,7 @@ func (app *application) routes() http.Handler {
 	mux.Post("/create-customer-and-subscribe-to-plan", app.CreateCustomerAndSubscribeToPlan)
 
 	mux.Post("/api/authenticate", app.CreateAuthToken)
+	mux.Post("/api/is-authenticated", app.CheckAuthentication)
 
 	return mux
 }
