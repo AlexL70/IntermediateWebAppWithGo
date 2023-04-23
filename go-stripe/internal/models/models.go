@@ -163,16 +163,13 @@ func (m *DBModel) GetUserForToken(token string) (*User, error) {
 	defer cancel()
 
 	tx := m.DB.WithContext(ctx)
-	var t Token
-	tokenHash := sha256.Sum256([]byte(token))
-	err := tx.Where(&Token{TokenHash: tokenHash[:]}).First(&t).Error
-	if err != nil {
-		return nil, fmt.Errorf("error getting token from DB: %w", err)
-	}
 	var user User
-	err = getEntityById(t.UserID, m, &user)
+	tokenHash := sha256.Sum256([]byte(token))
+	err := tx.Joins("join tokens t on t.user_id = users.id").
+		Where("t.token_hash = ?", tokenHash[:]).
+		First(&user).Error
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting user by token from DB: %w", err)
 	}
 	return &user, nil
 }
