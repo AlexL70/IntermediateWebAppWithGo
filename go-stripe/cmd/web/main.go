@@ -12,6 +12,7 @@ import (
 
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/driver"
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/models"
+	"github.com/alexedwards/scs/mysqlstore"
 	"github.com/alexedwards/scs/v2"
 )
 
@@ -85,7 +86,8 @@ func main() {
 
 	// set up session
 	session = scs.New()
-	session.Lifetime = 24 * time.Hour
+	session.Lifetime = 12 * time.Hour
+	session.Store = mysqlstore.New(sqlDB)
 
 	tc := map[string]*template.Template{}
 
