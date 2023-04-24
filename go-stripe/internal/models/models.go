@@ -111,6 +111,7 @@ type Token struct {
 	UserID    int
 	Name      string
 	Email     string
+	Expiry    time.Time
 	TokenHash []byte
 }
 
@@ -166,7 +167,7 @@ func (m *DBModel) GetUserForToken(token string) (*User, error) {
 	var user User
 	tokenHash := sha256.Sum256([]byte(token))
 	err := tx.Joins("join tokens t on t.user_id = users.id").
-		Where("t.token_hash = ?", tokenHash[:]).
+		Where("t.token_hash = ? and t.expiry > ?", tokenHash[:], time.Now()).
 		First(&user).Error
 	if err != nil {
 		return nil, fmt.Errorf("error getting user by token from DB: %w", err)
@@ -189,6 +190,7 @@ func (m *DBModel) InsertToken(t *SToken, u User) (int, error) {
 		UserID:    u.ID,
 		Name:      fmt.Sprintf("%s %s", u.FirstName, u.LastName),
 		Email:     u.Email,
+		Expiry:    t.Expiry,
 		TokenHash: t.Hash,
 	}
 
