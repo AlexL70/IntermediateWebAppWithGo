@@ -246,6 +246,8 @@ func (app *application) VitrualTerminalPaymentSucceeded(w http.ResponseWriter, r
 		ExpiryYear:          txnData.ExpiryYear,
 		BankReturnCode:      pi.LatestCharge.ID,
 		TransactionStatusID: 2, // Cleared
+		PaymentIntent:       txnData.PaymentIntent,
+		PaymentMethod:       txnData.PaymentMethod,
 	}
 
 	txn.ID, err = app.SaveTransaction(txn)
