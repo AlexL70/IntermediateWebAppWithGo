@@ -209,6 +209,54 @@ FINISH:
 	w.Write(out)
 }
 
+func (app *application) VitrualTerminalPaymentSucceeded(w http.ResponseWriter, r *http.Request) {
+	var txnData models.VTTransactionData
+	err := app.readJSON(w, r, &txnData)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.BadRequest(w, r, err)
+		return
+	}
+
+	card := cards.Card{
+		Secret:   app.config.stripe.secret,
+		Key:      app.config.stripe.key,
+		Currency: "usd",
+	}
+	pi, err := card.RetrievePaymentIntent(txnData.PaymentIntent)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.BadRequest(w, r, err)
+		return
+	}
+	pm, err := card.GetPaymentMethod(txnData.PaymentMethod)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.BadRequest(w, r, err)
+	}
+	txnData.LastFour = pm.Card.Last4
+	txnData.ExpiryMonth = int(pm.Card.ExpMonth)
+	txnData.ExpiryYear = int(pm.Card.ExpYear)
+
+	txn := models.Transaction{
+		Amount:              txnData.PaymentAmount,
+		Currency:            txnData.PaymentCurrency,
+		LastFour:            txnData.LastFour,
+		ExpiryMonth:         txnData.ExpiryMonth,
+		ExpiryYear:          txnData.ExpiryYear,
+		BankReturnCode:      pi.LatestCharge.ID,
+		TransactionStatusID: 2, // Cleared
+	}
+
+	txn.ID, err = app.SaveTransaction(txn)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.BadRequest(w, r, err)
+		return
+	}
+	app.writeJson(w, http.StatusOK, txn)
+}
+
 func (app *application) CreateAuthToken(w http.ResponseWriter, r *http.Request) {
 	var userInput struct {
 		Email    string `json:"email"`
