@@ -4,7 +4,7 @@
 {{end}}
 {{define "content"}}
 <div class="alert alert-danger text-center d-none" id="login-messages"></div>
-<form action="" method="post"
+<form action="/login" method="post"
     name="login_form" id="login_form"
     class="d-block needs-validation login-form" autocomplete="off" novalidate="">
     <h2 class="mt-2 mb-3 text-centered">Login</h2>
@@ -76,7 +76,7 @@ function login() {
                 localStorage.setItem("token", resp.authentication_token.token);
                 localStorage.setItem("token_expiry", resp.authentication_token.expiry);
                 showSuccess();
-                location.href = "/";
+                document.getElementById("login_form").submit();
             } else {
                 showError(resp.message ?? "Unknown error!")
             }

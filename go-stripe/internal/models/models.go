@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -157,6 +158,21 @@ func (m *DBModel) GetUserByEmail(email string) (User, error) {
 		return user, fmt.Errorf("error searching user by email: %w", result.Error)
 	}
 	return user, nil
+}
+
+func (m *DBModel) Authenticate(email, password string) (int, error) {
+	u, err := m.GetUserByEmail(email)
+	if err != nil {
+		return 0, err
+	}
+	err = bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
+	if err != nil {
+		if err == bcrypt.ErrMismatchedHashAndPassword {
+			return 0, fmt.Errorf("incorrect password %w", err)
+		}
+		return 0, fmt.Errorf("error comparing password: %w", err)
+	}
+	return u.ID, nil
 }
 
 func (m *DBModel) GetUserForToken(token string) (*User, error) {
