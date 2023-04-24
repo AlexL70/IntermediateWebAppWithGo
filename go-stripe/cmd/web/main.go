@@ -40,7 +40,7 @@ type application struct {
 	templateCache map[string]*template.Template
 	version       string
 	DB            models.DBModel
-	Session       *scs.Session
+	Session       *scs.SessionManager
 }
 
 func (app *application) serve() error {
