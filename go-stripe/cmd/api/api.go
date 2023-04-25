@@ -61,7 +61,7 @@ func main() {
 
 	flag.IntVar(&cfg.port, "port", 4001, "Server port to listen on")
 	flag.StringVar(&cfg.env, "env", "development", "Application environment {development|production|maintenance}")
-	flag.StringVar(&cfg.frontEnd, "api", "http://localhost:4000", "URL to front-end app")
+	flag.StringVar(&cfg.frontEnd, "frontend", "http://localhost:4000", "URL to front-end app")
 	flag.Parse()
 
 	cfg.stripe.key = os.Getenv("STRIPE_KEY")

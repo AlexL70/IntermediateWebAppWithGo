@@ -8,6 +8,7 @@ import (
 
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/cards"
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/models"
+	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/urlsigner"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -319,5 +320,17 @@ func (app *application) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	if err := app.renderTemplate(w, r, "forgot-password", &templateData{}); err != nil {
 		app.errorLog.Println(fmt.Errorf("error rendering template: %w", err))
 		return
+	}
+}
+
+func (app *application) ShowResetPassword(w http.ResponseWriter, r *http.Request) {
+	testUrl := fmt.Sprintf("%s%s", app.config.frontEnd, r.RequestURI)
+	signer := urlsigner.Signer{
+		Secret: []byte(app.config.secretKey),
+	}
+	if valid := signer.VerifyToken(testUrl); valid {
+		w.Write([]byte("valid"))
+	} else {
+		w.Write([]byte("invalid"))
 	}
 }
