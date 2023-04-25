@@ -370,6 +370,29 @@ func (app *application) authenticateToken(r *http.Request) (*models.User, error)
 	return user, nil
 }
 
+func (app *application) SendPasswordResetEmail(w http.ResponseWriter, r *http.Request) {
+	var payload struct {
+		Email string `json:"email"`
+	}
+
+	err := app.readJSON(w, r, &payload)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.BadRequest(w, r, err)
+		return
+	}
+
+	var data = struct {
+		Link string
+	}{
+		"http://www.unb.ca",
+	}
+
+	app.infoLog.Println(data)
+
+	// send email
+}
+
 func (app *application) SaveCustomer(firstName, lastName, email string) (int, error) {
 	customer := models.Customer{
 		FirstName: firstName,
