@@ -17,6 +17,7 @@ func (s *Signer) GenerateTokenFromString(data string) string {
 
 	crypt := goalone.New(s.Secret, goalone.Timestamp)
 	if strings.Contains(data, "?") {
+		urlToSign = fmt.Sprintf("%s&hash=", data)
 	} else {
 		urlToSign = fmt.Sprintf("%s?hash=", data)
 	}

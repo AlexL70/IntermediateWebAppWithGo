@@ -11,6 +11,7 @@ import (
 
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/cards"
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/models"
+	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/urlsigner"
 	"github.com/go-chi/chi/v5"
 	"github.com/stripe/stripe-go/v74"
 )
@@ -382,13 +383,33 @@ func (app *application) SendPasswordResetEmail(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// prepare successful response
+	response := struct {
+		Error   bool   `json:"error"`
+		Message string `json:"message"`
+	}{false, "If your email exists in our DB, then password reset link was successfully sent! Check your inbox!"}
+
+	// verify that user with entered email exists in DB
+	_, err = app.DB.GetUserByEmail(payload.Email)
+	if err != nil {
+		// print error to log because email is not found
+		app.errorLog.Println(err)
+		// return successful response so that hacker could not guess if email exists
+		app.writeJson(w, http.StatusOK, response)
+		return
+	}
+
+	link := fmt.Sprintf("%s/reset-password?email=%s", app.config.frontEnd, payload.Email)
+	sign := urlsigner.Signer{
+		Secret: []byte(app.config.secretKey),
+	}
+	signedLink := sign.GenerateTokenFromString(link)
+
 	var data = struct {
 		Link string
 	}{
-		"http://www.unb.ca",
+		signedLink,
 	}
-
-	app.infoLog.Println(data)
 
 	// send email
 	err = app.SendMail("info@widget.com", payload.Email, "Password Reset Link", "password-reset", data)
@@ -397,10 +418,7 @@ func (app *application) SendPasswordResetEmail(w http.ResponseWriter, r *http.Re
 		app.internalError(w)
 		return
 	}
-	response := struct {
-		Error   bool   `json:"error"`
-		Message string `json:"message"`
-	}{false, "Password reset link successfully sent! Check your inbox!"}
+
 	app.writeJson(w, http.StatusOK, response)
 }
 
