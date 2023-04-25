@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"html/template"
+	"strings"
 	"time"
 
 	mail "github.com/xhit/go-simple-mail/v2"
@@ -42,16 +43,17 @@ func (app *application) SendMail(from, to, subject, tmpl string, data any) error
 	}
 
 	plainMessage := tpl.String()
-	app.infoLog.Println(formattedMessage)
-	app.infoLog.Println(plainMessage)
 
 	// send the mail
+	app.infoLog.Println(app.config.smtp)
 	server := mail.NewSMTPClient()
 	server.Host = app.config.smtp.host
 	server.Port = app.config.smtp.port
-	server.Username = app.config.smtp.username
-	server.Password = app.config.smtp.password
-	server.Encryption = mail.EncryptionNone
+	if len(strings.Replace(app.config.smtp.username, " ", "", -1)) > 0 {
+		server.Username = app.config.smtp.username
+		server.Password = app.config.smtp.password
+	}
+	server.Encryption = mail.EncryptionTLS
 	server.KeepAlive = false
 	server.ConnectTimeout = 10 * time.Second
 	server.SendTimeout = 10 * time.Second

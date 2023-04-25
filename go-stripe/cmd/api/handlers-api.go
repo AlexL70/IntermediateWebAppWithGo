@@ -391,6 +391,17 @@ func (app *application) SendPasswordResetEmail(w http.ResponseWriter, r *http.Re
 	app.infoLog.Println(data)
 
 	// send email
+	err = app.SendMail("info@widget.com", payload.Email, "Password Reset Link", "password-reset", data)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.internalError(w)
+		return
+	}
+	response := struct {
+		Error   bool   `json:"error"`
+		Message string `json:"message"`
+	}{false, "Password reset link successfully sent! Check your inbox!"}
+	app.writeJson(w, http.StatusOK, response)
 }
 
 func (app *application) SaveCustomer(firstName, lastName, email string) (int, error) {
