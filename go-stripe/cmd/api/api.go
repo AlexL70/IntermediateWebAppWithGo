@@ -31,6 +31,8 @@ type config struct {
 		username string
 		password string
 	}
+	secretKey string
+	frontEnd  string
 }
 
 type application struct {
@@ -59,11 +61,13 @@ func main() {
 
 	flag.IntVar(&cfg.port, "port", 4001, "Server port to listen on")
 	flag.StringVar(&cfg.env, "env", "development", "Application environment {development|production|maintenance}")
+	flag.StringVar(&cfg.frontEnd, "api", "http://localhost:4000", "URL to front-end app")
 	flag.Parse()
 
 	cfg.stripe.key = os.Getenv("STRIPE_KEY")
 	cfg.stripe.secret = os.Getenv("STRIPE_SECRET")
 	cfg.db.dsn = os.Getenv("WIDGETS_DSN")
+	cfg.secretKey = os.Getenv("WIDGET_SECRET_KEY")
 
 	cfg.smtp.host = os.Getenv("SMTP_HOST")
 	var err error
