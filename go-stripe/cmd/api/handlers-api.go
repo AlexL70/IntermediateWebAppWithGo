@@ -14,6 +14,7 @@ import (
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/urlsigner"
 	"github.com/go-chi/chi/v5"
 	"github.com/stripe/stripe-go/v74"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type stripePayload struct {
@@ -419,6 +420,48 @@ func (app *application) SendPasswordResetEmail(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	app.writeJson(w, http.StatusOK, response)
+}
+
+func (app *application) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	var payload struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	err := app.readJSON(w, r, &payload)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.BadRequest(w, r, err)
+		return
+	}
+
+	user, err := app.DB.GetUserByEmail(payload.Email)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.BadRequest(w, r, err)
+		return
+	}
+
+	newHash, err := bcrypt.GenerateFromPassword([]byte(payload.Password), 12)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.internalError(w)
+		return
+	}
+
+	err = app.DB.UpdatePasswordForUser(user, string(newHash))
+	if err != nil {
+		app.errorLog.Println(err)
+		app.internalError(w)
+		return
+	}
+
+	response := struct {
+		Error   bool   `json:"error"`
+		Message string `json:"message"`
+	}{false, fmt.Sprintf("Password has been successfully changed for user %q", payload.Email)}
+	app.infoLog.Printf("Password has been changed for %q user", user.Email)
 	app.writeJson(w, http.StatusOK, response)
 }
 

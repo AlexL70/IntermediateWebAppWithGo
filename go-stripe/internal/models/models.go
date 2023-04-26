@@ -146,6 +146,18 @@ func (m *DBModel) InsertCustomer(customer Customer) (int, error) {
 	return insertEntity(&customer, m)
 }
 
+func (m *DBModel) UpdatePasswordForUser(u User, hash string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	tx := m.DB.WithContext(ctx)
+	u.Password = hash
+	u.UpdatedAt = time.Now()
+	err := tx.Save(&u).Error
+
+	return err
+}
+
 // GetUserByEmail gets a user by email address
 func (m *DBModel) GetUserByEmail(email string) (User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
