@@ -328,9 +328,18 @@ func (app *application) ShowResetPassword(w http.ResponseWriter, r *http.Request
 	signer := urlsigner.Signer{
 		Secret: []byte(app.config.secretKey),
 	}
-	if valid := signer.VerifyToken(testUrl); valid {
-		w.Write([]byte("valid"))
-	} else {
-		w.Write([]byte("invalid"))
+	if valid := signer.VerifyToken(testUrl); !valid {
+		app.errorLog.Printf("Invalid URL tampering detected: %q", testUrl)
+		return
+	}
+
+	data := map[string]any{
+		"email": r.URL.Query().Get("email"),
+	}
+	if err := app.renderTemplate(w, r, "reset-password", &templateData{
+		Data: data,
+	}); err != nil {
+		app.errorLog.Println(fmt.Errorf("error rendering template: %w", err))
+		return
 	}
 }
