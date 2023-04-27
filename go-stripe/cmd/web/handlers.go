@@ -329,7 +329,14 @@ func (app *application) ShowResetPassword(w http.ResponseWriter, r *http.Request
 		Secret: []byte(app.config.secretKey),
 	}
 	if valid := signer.VerifyToken(testUrl); !valid {
-		app.errorLog.Printf("Invalid URL tampering detected: %q", testUrl)
+		app.errorLog.Printf("Invalid URL tampering detected: %q\n", testUrl)
+		return
+	}
+
+	// make sure token has not expired yet
+	expired := signer.Expired(testUrl, 60)
+	if expired {
+		app.errorLog.Println("Change password URL has been expired.")
 		return
 	}
 
