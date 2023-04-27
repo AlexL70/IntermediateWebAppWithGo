@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/cards"
+	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/encryption"
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/models"
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/urlsigner"
 	"github.com/go-chi/chi/v5"
@@ -436,7 +437,16 @@ func (app *application) ResetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := app.DB.GetUserByEmail(payload.Email)
+	encryptor := encryption.Encryption{
+		Key: []byte(app.config.secretKey),
+	}
+	decryptedEmail, err := encryptor.Decrypt(payload.Email)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.BadRequest(w, r, errors.New("wrong email data"))
+	}
+
+	user, err := app.DB.GetUserByEmail(decryptedEmail)
 	if err != nil {
 		app.errorLog.Println(err)
 		app.BadRequest(w, r, err)
@@ -460,8 +470,8 @@ func (app *application) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	response := struct {
 		Error   bool   `json:"error"`
 		Message string `json:"message"`
-	}{false, fmt.Sprintf("Password has been successfully changed for user %q", payload.Email)}
-	app.infoLog.Printf("Password has been changed for %q user", user.Email)
+	}{false, fmt.Sprintf("Password has been successfully changed for user %q", decryptedEmail)}
+	app.infoLog.Printf("Password has been changed for %q user", decryptedEmail)
 	app.writeJson(w, http.StatusOK, response)
 }
 
