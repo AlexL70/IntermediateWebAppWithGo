@@ -21,6 +21,21 @@ func (app *application) VirtualTerminal(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+// AllSales function displays a list of all sales
+func (app *application) AllSales(w http.ResponseWriter, r *http.Request) {
+	td := &templateData{}
+	if err := app.renderTemplate(w, r, "all-sales", td); err != nil {
+		app.errorLog.Println(err)
+	}
+}
+
+func (app *application) AllSubscriptions(w http.ResponseWriter, r *http.Request) {
+	td := &templateData{}
+	if err := app.renderTemplate(w, r, "all-subscriptions", td); err != nil {
+		app.errorLog.Println(err)
+	}
+}
+
 // Home displays the home page
 func (app *application) Home(w http.ResponseWriter, r *http.Request) {
 	td := &templateData{}
@@ -108,7 +123,7 @@ func (app *application) PaymentSucceeded(w http.ResponseWriter, r *http.Request)
 
 	widgetID, err := strconv.Atoi(r.Form.Get("product_id"))
 	if err != nil {
-		app.errorLog.Println(fmt.Errorf("Error converting widget id: %w", err))
+		app.errorLog.Println(fmt.Errorf("error converting widget id: %w", err))
 		return
 	}
 	txnData, err := app.GetTransactionData(r)
