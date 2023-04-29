@@ -10,6 +10,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // DBModel is the type for database connection values
@@ -34,7 +35,7 @@ type IDBEntity interface {
 	SetCreated()
 }
 type DBEntity struct {
-	ID        int       `json:"id"`
+	ID        int       `json:"id" gorm:"primaryKey"`
 	CreatedAt time.Time `json:"-"`
 	UpdatedAt time.Time `json:"-"`
 }
@@ -43,7 +44,7 @@ func (e DBEntity) GetID() int {
 	return e.ID
 }
 
-func (e DBEntity) SetCreated() {
+func (e *DBEntity) SetCreated() {
 	e.CreatedAt = time.Now()
 	e.UpdatedAt = time.Now()
 }
@@ -63,12 +64,15 @@ type Widget struct {
 // Order is the type for all orders
 type Order struct {
 	DBEntity
-	WidgetID      int `json:"widget_id"`
-	TransactionID int `json:"transaction_id"`
-	CustomerID    int `json:"customer_id"`
-	StatusID      int `json:"status_id"`
-	Quantity      int `json:"quantity"`
-	Amount        int `json:"amount"`
+	WidgetID      int         `json:"widget_id"`
+	TransactionID int         `json:"transaction_id"`
+	CustomerID    int         `json:"customer_id"`
+	StatusID      int         `json:"status_id"`
+	Quantity      int         `json:"quantity"`
+	Amount        int         `json:"amount"`
+	Widget        Widget      `json:"widget"`
+	Transaction   Transaction `json:"transaction"`
+	Customer      Customer    `json:"customer"`
 }
 
 // Status is a type for order statuses
@@ -223,6 +227,30 @@ func (m *DBModel) InsertToken(t *SToken, u User) (int, error) {
 	}
 
 	return insertEntity(&token, m)
+}
+
+func (m *DBModel) GetAllOrders() ([]*Order, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	tx := m.DB.WithContext(ctx)
+
+	var orders []*Order
+	result := tx.
+		// I wonder is there any more elegant way to add "order by" clause to query in GORM?
+		Clauses(clause.OrderBy{Columns: []clause.OrderByColumn{
+			{
+				Column: clause.Column{Table: "orders", Name: "created_at"},
+				Desc:   true,
+			},
+		}}).
+		Joins("Widget").Preload("Transaction").Preload("Customer").
+		Where(&Widget{IsRecurring: false}).
+		Find(&orders)
+	if result.Error != nil {
+		return nil, fmt.Errorf("error getting all orders from DB: %w", result.Error)
+	}
+	return orders, nil
 }
 
 func insertEntity(entity IDBEntity, m *DBModel) (int, error) {
