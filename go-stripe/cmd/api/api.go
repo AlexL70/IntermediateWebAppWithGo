@@ -11,6 +11,9 @@ import (
 
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/driver"
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/models"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 const version = "1.0.0"
@@ -82,12 +85,30 @@ func main() {
 	errorLog := log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
 	infoLog.Printf("Trying to connect to DB with DSN: %q\n", cfg.db.dsn)
-	conn, err := driver.OpenDB(cfg.db.dsn)
+	var conn *gorm.DB
+	if cfg.env == "development" {
+		newLogger := logger.New(
+			log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+			logger.Config{
+				SlowThreshold:             time.Second, // Slow SQL threshold
+				LogLevel:                  logger.Info, // Log level
+				IgnoreRecordNotFoundError: true,        // Ignore ErrRecordNotFound error for logger
+				ParameterizedQueries:      true,        // Don't include params in the SQL log
+				Colorful:                  false,       // Disable color
+			},
+		)
+		conn, err = gorm.Open(mysql.Open(cfg.db.dsn), &gorm.Config{
+			Logger: newLogger,
+		})
+	} else {
+		conn, err = driver.OpenDB(cfg.db.dsn)
+	}
 	if err != nil {
 		errorLog.Fatal(err)
 	}
 	sqlDB, _ := conn.DB()
 	defer sqlDB.Close()
+
 	infoLog.Println("Connected to DB!")
 
 	app := &application{

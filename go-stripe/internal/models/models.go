@@ -244,8 +244,8 @@ func (m *DBModel) GetAllOrders() ([]*Order, error) {
 				Desc:   true,
 			},
 		}}).
-		Joins("Widget").Preload("Transaction").Preload("Customer").
-		Where(&Widget{IsRecurring: false}).
+		InnerJoins("Widget", tx.Where(&Widget{IsRecurring: false}, "is_recurring")).
+		Joins("Transaction").Joins("Customer").
 		Find(&orders)
 	if result.Error != nil {
 		return nil, fmt.Errorf("error getting all orders from DB: %w", result.Error)
