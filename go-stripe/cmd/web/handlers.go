@@ -37,7 +37,24 @@ func (app *application) AllSubscriptions(w http.ResponseWriter, r *http.Request)
 }
 
 func (app *application) ShowSale(w http.ResponseWriter, r *http.Request) {
-	td := &templateData{}
+	td := &templateData{StringMap: map[string]string{
+		"title":       "Sale",
+		"backUrl":     "/admin/all-sales",
+		"backCaption": "Back to all sales",
+	},
+	}
+	if err := app.renderTemplate(w, r, "sale", td); err != nil {
+		app.errorLog.Println(err)
+	}
+}
+
+func (app *application) ShowSubscription(w http.ResponseWriter, r *http.Request) {
+	td := &templateData{StringMap: map[string]string{
+		"title":       "Subscription",
+		"backUrl":     "/admin/all-subscriptions",
+		"backCaption": "Back to all subscriptions",
+	},
+	}
 	if err := app.renderTemplate(w, r, "sale", td); err != nil {
 		app.errorLog.Println(err)
 	}
