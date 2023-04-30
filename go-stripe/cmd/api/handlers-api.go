@@ -485,6 +485,16 @@ func (app *application) AllSales(w http.ResponseWriter, r *http.Request) {
 	app.writeJson(w, http.StatusOK, allSales)
 }
 
+func (app *application) AllSubscriptions(w http.ResponseWriter, r *http.Request) {
+	allSubscriptions, err := app.DB.GetAllSubscriptions()
+	if err != nil {
+		app.errorLog.Println(err)
+		app.internalError(w)
+		return
+	}
+	app.writeJson(w, http.StatusOK, allSubscriptions)
+}
+
 func (app *application) SaveCustomer(firstName, lastName, email string) (int, error) {
 	customer := models.Customer{
 		FirstName: firstName,

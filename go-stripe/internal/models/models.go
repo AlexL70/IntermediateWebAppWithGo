@@ -230,6 +230,14 @@ func (m *DBModel) InsertToken(t *SToken, u User) (int, error) {
 }
 
 func (m *DBModel) GetAllOrders() ([]*Order, error) {
+	return getOrdersByRecurring(false, m)
+}
+
+func (m *DBModel) GetAllSubscriptions() ([]*Order, error) {
+	return getOrdersByRecurring(true, m)
+}
+
+func getOrdersByRecurring(isRecurring bool, m *DBModel) ([]*Order, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -244,7 +252,7 @@ func (m *DBModel) GetAllOrders() ([]*Order, error) {
 				Desc:   true,
 			},
 		}}).
-		InnerJoins("Widget", tx.Where(&Widget{IsRecurring: false}, "is_recurring")).
+		InnerJoins("Widget", tx.Where(&Widget{IsRecurring: isRecurring}, "is_recurring")).
 		Joins("Transaction").Joins("Customer").
 		Find(&orders)
 	if result.Error != nil {
