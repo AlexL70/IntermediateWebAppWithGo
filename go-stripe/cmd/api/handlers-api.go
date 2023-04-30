@@ -495,6 +495,25 @@ func (app *application) AllSubscriptions(w http.ResponseWriter, r *http.Request)
 	app.writeJson(w, http.StatusOK, allSubscriptions)
 }
 
+func (app *application) GetSale(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	orderId, err := strconv.Atoi(id)
+	if err != nil {
+		err := fmt.Errorf("error converting order id to int: %w", err)
+		app.errorLog.Println(err)
+		app.BadRequest(w, r, err)
+		return
+	}
+	order, err := app.DB.GetOrder(orderId)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.BadRequest(w, r, err)
+		return
+	}
+
+	app.writeJson(w, http.StatusOK, order)
+}
+
 func (app *application) SaveCustomer(firstName, lastName, email string) (int, error) {
 	customer := models.Customer{
 		FirstName: firstName,

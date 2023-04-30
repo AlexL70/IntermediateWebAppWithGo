@@ -36,6 +36,13 @@ func (app *application) AllSubscriptions(w http.ResponseWriter, r *http.Request)
 	}
 }
 
+func (app *application) ShowSale(w http.ResponseWriter, r *http.Request) {
+	td := &templateData{}
+	if err := app.renderTemplate(w, r, "sale", td); err != nil {
+		app.errorLog.Println(err)
+	}
+}
+
 // Home displays the home page
 func (app *application) Home(w http.ResponseWriter, r *http.Request) {
 	td := &templateData{}

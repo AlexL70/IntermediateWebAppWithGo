@@ -135,6 +135,39 @@ func (m *DBModel) GetWidget(id int) (Widget, error) {
 	return widget, err
 }
 
+// GetTransaction fetches Transaction from DB by id
+func (m *DBModel) GetTransaction(id int) (Transaction, error) {
+	var tran Transaction
+	err := getEntityById(id, m, &tran)
+	return tran, err
+}
+
+// GetCustomer fetches Customer from DB by id
+func (m *DBModel) GetCustomer(id int) (Customer, error) {
+	var customer Customer
+	err := getEntityById(id, m, &customer)
+	return customer, err
+}
+
+// GetOrder fetches Order entity from DB by id
+func (m *DBModel) GetOrder(id int) (Order, error) {
+	var order Order
+	err := getEntityById(id, m, &order)
+	if err != nil {
+		return order, err
+	}
+	order.Widget, err = m.GetWidget(order.WidgetID)
+	if err != nil {
+		return order, err
+	}
+	order.Transaction, err = m.GetTransaction(order.TransactionID)
+	if err != nil {
+		return order, err
+	}
+	order.Customer, err = m.GetCustomer(order.CustomerID)
+	return order, err
+}
+
 // InsertTransaction inserts new transaction and returns it's id
 func (m *DBModel) InsertTransaction(txn Transaction) (int, error) {
 	return insertEntity(&txn, m)
