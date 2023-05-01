@@ -7,6 +7,7 @@ import (
 	"github.com/stripe/stripe-go/v74/customer"
 	"github.com/stripe/stripe-go/v74/paymentintent"
 	"github.com/stripe/stripe-go/v74/paymentmethod"
+	"github.com/stripe/stripe-go/v74/refund"
 	"github.com/stripe/stripe-go/v74/subscription"
 )
 
@@ -110,4 +111,20 @@ func (c *Card) CreateCustomer(pm, email string) (*stripe.Customer, string, error
 		return nil, msg, err
 	}
 	return cust, "", nil
+}
+
+func (c *Card) Refund(pi string, amount int) error {
+	stripe.Key = c.Secret
+	amountToRefund := int64(amount)
+	refundParams := &stripe.RefundParams{
+		Amount:        &amountToRefund,
+		PaymentIntent: &pi,
+	}
+
+	_, err := refund.New(refundParams)
+	if err != nil {
+		return fmt.Errorf("failed refinding payment %q that sum is %d; error occured: %w", pi, amount, err)
+	}
+
+	return nil
 }
