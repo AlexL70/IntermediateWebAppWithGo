@@ -11,6 +11,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type responsePayload = struct {
+	Error   bool   `json:"error"`
+	Message string `json:"message"`
+}
+
 // authJsonPayload is for returning error/success information to client
 type authJsonPayload = struct {
 	Error   bool          `json:"error"`

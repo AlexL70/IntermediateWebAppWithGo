@@ -142,6 +142,21 @@ func (m *DBModel) GetTransaction(id int) (Transaction, error) {
 	return tran, err
 }
 
+// GetTransactionByPI fetches Transaction from DB by Payment Intent ID
+func (m *DBModel) GetTransactionByPI(pi string) (Transaction, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	tx := m.DB.WithContext(ctx)
+
+	var transaction Transaction
+	if err := tx.First(&transaction, &Transaction{PaymentIntent: pi}).Error; err != nil {
+		return transaction, fmt.Errorf("error reading Transaction from DB by payment intent id: %w", err)
+	}
+
+	return transaction, nil
+}
+
 // GetCustomer fetches Customer from DB by id
 func (m *DBModel) GetCustomer(id int) (Customer, error) {
 	var customer Customer

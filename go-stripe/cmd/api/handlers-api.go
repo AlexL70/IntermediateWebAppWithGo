@@ -514,6 +514,63 @@ func (app *application) GetSale(w http.ResponseWriter, r *http.Request) {
 	app.writeJson(w, http.StatusOK, order)
 }
 
+func (app *application) RefundCharge(w http.ResponseWriter, r *http.Request) {
+	var chargeToRefund struct {
+		ID            int    `json:"id"`
+		PaymentIntent string `json:"pi"`
+		Amount        int    `json:"amount"`
+		Currency      string `json:"currency"`
+	}
+
+	err := app.readJSON(w, r, &chargeToRefund)
+	if err != nil {
+		err := fmt.Errorf("refund errof; %w", err)
+		app.errorLog.Println(err)
+		app.BadRequest(w, r, err)
+
+	}
+
+	// validate the amount and currency against transaction from DB
+	trx, err := app.DB.GetTransactionByPI(chargeToRefund.PaymentIntent)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.internalError(w)
+		return
+	}
+	if trx.Amount != chargeToRefund.Amount {
+		err := errors.New(fmt.Sprintf("refund error;wrong amount: %d; amount of transaction is %d", chargeToRefund.Amount, trx.Amount))
+		app.errorLog.Println(err)
+		app.BadRequest(w, r, err)
+		return
+	}
+
+	if trx.Currency != chargeToRefund.Currency {
+		err := errors.New(fmt.Sprintf("refund error; wrong currency: %q; currency of transaction is %d", chargeToRefund.Currency, trx.Currency))
+		app.errorLog.Println(err)
+		app.BadRequest(w, r, err)
+		return
+	}
+
+	card := cards.Card{
+		Secret:   app.config.stripe.secret,
+		Key:      app.config.stripe.key,
+		Currency: chargeToRefund.Currency,
+	}
+
+	err = card.Refund(chargeToRefund.PaymentIntent, chargeToRefund.Amount)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.internalError(w)
+		return
+	}
+
+	resp := responsePayload{
+		Error:   false,
+		Message: "Refund succeeded!",
+	}
+	app.writeJson(w, http.StatusOK, resp)
+}
+
 func (app *application) SaveCustomer(firstName, lastName, email string) (int, error) {
 	customer := models.Customer{
 		FirstName: firstName,

@@ -123,7 +123,7 @@ func (c *Card) Refund(pi string, amount int) error {
 
 	_, err := refund.New(refundParams)
 	if err != nil {
-		return fmt.Errorf("failed refinding payment %q that sum is %d; error occured: %w", pi, amount, err)
+		return fmt.Errorf("failed refunding payment %q that sum is %d; error occured: %w", pi, amount, err)
 	}
 
 	return nil
