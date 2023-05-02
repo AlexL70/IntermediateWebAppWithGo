@@ -41,6 +41,8 @@ func (app *application) ShowSale(w http.ResponseWriter, r *http.Request) {
 		"title":       "Sale",
 		"backUrl":     "/admin/all-sales",
 		"backCaption": "Back to all sales",
+		"refund-url":  "/api/admin/refund",
+		"refund-btn":  "Refund order",
 	},
 	}
 	if err := app.renderTemplate(w, r, "sale", td); err != nil {
@@ -53,6 +55,8 @@ func (app *application) ShowSubscription(w http.ResponseWriter, r *http.Request)
 		"title":       "Subscription",
 		"backUrl":     "/admin/all-subscriptions",
 		"backCaption": "Back to all subscriptions",
+		"refund-url":  "/api/admin/cancel-subscription",
+		"refund-btn":  "Cancel subscription",
 	},
 	}
 	if err := app.renderTemplate(w, r, "sale", td); err != nil {
