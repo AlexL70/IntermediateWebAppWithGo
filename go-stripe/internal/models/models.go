@@ -210,6 +210,21 @@ func (m *DBModel) UpdatePasswordForUser(u User, hash string) error {
 	return err
 }
 
+func (m *DBModel) UpdateOrderStatus(id, statusID int) error {
+	var order Order
+	err := getEntityById(id, m, &order)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	tx := m.DB.WithContext(ctx)
+	order.StatusID = statusID
+
+	return tx.Save(order).Error
+}
+
 // GetUserByEmail gets a user by email address
 func (m *DBModel) GetUserByEmail(email string) (User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)

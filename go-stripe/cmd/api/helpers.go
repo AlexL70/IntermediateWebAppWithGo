@@ -62,7 +62,7 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, data an
 }
 
 func (app *application) BadRequest(w http.ResponseWriter, r *http.Request, err error) error {
-	payload := authJsonPayload{
+	payload := responsePayload{
 		Error:   true,
 		Message: err.Error(),
 	}
@@ -71,7 +71,7 @@ func (app *application) BadRequest(w http.ResponseWriter, r *http.Request, err e
 }
 
 func (app *application) invalidCredentials(w http.ResponseWriter) error {
-	payload := authJsonPayload{
+	payload := responsePayload{
 		Error:   true,
 		Message: "authentication failed; check your credentials and try again",
 	}
@@ -80,7 +80,7 @@ func (app *application) invalidCredentials(w http.ResponseWriter) error {
 }
 
 func (app *application) internalError(w http.ResponseWriter) error {
-	payload := authJsonPayload{
+	payload := responsePayload{
 		Error:   true,
 		Message: "internal server error; if it repeats, please contact the support",
 	}

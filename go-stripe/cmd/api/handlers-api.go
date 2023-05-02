@@ -341,7 +341,7 @@ func (app *application) CheckAuthentication(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	// otherwise send back success response
-	payload := authJsonPayload{
+	payload := responsePayload{
 		Error:   false,
 		Message: fmt.Sprintf("Authenticated user: %s", user.Email),
 	}
@@ -538,14 +538,14 @@ func (app *application) RefundCharge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if trx.Amount != chargeToRefund.Amount {
-		err := errors.New(fmt.Sprintf("refund error;wrong amount: %d; amount of transaction is %d", chargeToRefund.Amount, trx.Amount))
+		err := fmt.Errorf("refund error;wrong amount: %d; amount of transaction is %d", chargeToRefund.Amount, trx.Amount)
 		app.errorLog.Println(err)
 		app.BadRequest(w, r, err)
 		return
 	}
 
 	if trx.Currency != chargeToRefund.Currency {
-		err := errors.New(fmt.Sprintf("refund error; wrong currency: %q; currency of transaction is %d", chargeToRefund.Currency, trx.Currency))
+		err := fmt.Errorf("refund error; wrong currency: %q; currency of transaction is %q", chargeToRefund.Currency, trx.Currency)
 		app.errorLog.Println(err)
 		app.BadRequest(w, r, err)
 		return
@@ -558,9 +558,22 @@ func (app *application) RefundCharge(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = card.Refund(chargeToRefund.PaymentIntent, chargeToRefund.Amount)
+
 	if err != nil {
 		app.errorLog.Println(err)
-		app.internalError(w)
+		var strErr *stripe.Error
+		if ok := errors.As(err, &strErr); ok && strErr.Type == stripe.ErrorTypeInvalidRequest {
+			app.BadRequest(w, r, errors.New(strErr.Msg))
+		} else {
+			app.internalError(w)
+		}
+		return
+	}
+
+	err = app.DB.UpdateOrderStatus(chargeToRefund.ID, 2)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.BadRequest(w, r, errors.New("the charge was refunded, but the database could not be updated; please call support"))
 		return
 	}
 
