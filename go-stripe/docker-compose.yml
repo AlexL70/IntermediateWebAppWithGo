@@ -1,0 +1,17 @@
+version: "3"
+services:
+  mariadb:
+    image: "mariadb:10.11"
+    restart: always
+    environment:
+      MYSQL_USER: alexl70
+      MYSQL_ROOT_PASSWORD: AlexL70@Maria
+      MYSQL_PASSWORD: AlexL70@Maria
+      MYSQL_DATABASE: widgets
+    logging:
+      options:
+        tag: "{{.DaemonName}}(image={{.ImageName}};name={{.Name}};id={{.ID}})"
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mariadb-data:/var/lib/mariadb/mysql
