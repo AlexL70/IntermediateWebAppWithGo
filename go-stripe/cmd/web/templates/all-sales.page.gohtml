@@ -13,6 +13,7 @@
                 <th>Customer</th>
                 <th>Procuct</th>
                 <th>Amount</th>
+                <th>Status</th>
             </tr>
             <tbody></tbody>
         </thead>
@@ -52,6 +53,13 @@
                     newCell = newRow.insertCell();
                     item = document.createTextNode(formatCurrency(i.transaction.amount));
                     newCell.appendChild(item)
+
+                    newCell = newRow.insertCell();
+                    if (i.status_id != 1) {
+                        newCell.innerHTML = `<span class="badge bg-danger">Refunded</span>`;
+                    } else {
+                        newCell.innerHTML = `<span class="badge bg-success">Charged</span>`;
+                    }
                 });
             } else {
                 let newRow = tbody.insertRow();
