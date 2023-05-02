@@ -526,7 +526,7 @@ func (app *application) RefundCharge(w http.ResponseWriter, r *http.Request) {
 
 	err := app.readJSON(w, r, &chargeToRefund)
 	if err != nil {
-		err := fmt.Errorf("refund errof; %w", err)
+		err := fmt.Errorf("refund error: %w", err)
 		app.errorLog.Println(err)
 		app.BadRequest(w, r, err)
 
@@ -582,6 +582,52 @@ func (app *application) RefundCharge(w http.ResponseWriter, r *http.Request) {
 	resp := responsePayload{
 		Error:   false,
 		Message: "Refund succeeded!",
+	}
+	app.writeJson(w, http.StatusOK, resp)
+}
+
+func (app *application) CancelSubscription(w http.ResponseWriter, r *http.Request) {
+	var subToCancel struct {
+		ID            int    `json:"id"`
+		PaymentIntent string `json:"pi"`
+		Currency      string `json:"currency"`
+	}
+
+	err := app.readJSON(w, r, &subToCancel)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.BadRequest(w, r, fmt.Errorf("error cancelling subscription: %w", err))
+		return
+	}
+
+	card := cards.Card{
+		Secret:   app.config.stripe.secret,
+		Key:      app.config.stripe.key,
+		Currency: subToCancel.Currency,
+	}
+
+	err = card.CancelSubscription(subToCancel.PaymentIntent)
+	if err != nil {
+		app.errorLog.Println(err)
+		var strErr *stripe.Error
+		if ok := errors.As(err, &strErr); ok && strErr.Type == stripe.ErrorTypeInvalidRequest {
+			app.BadRequest(w, r, errors.New(strErr.Msg))
+		} else {
+			app.internalError(w)
+		}
+		return
+	}
+
+	err = app.DB.UpdateOrderStatus(subToCancel.ID, 3)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.BadRequest(w, r, errors.New("the subscription was cancelled, but the database could not be updated; please call support"))
+		return
+	}
+
+	resp := responsePayload{
+		Error:   false,
+		Message: "Subscription cancelled",
 	}
 	app.writeJson(w, http.StatusOK, resp)
 }
