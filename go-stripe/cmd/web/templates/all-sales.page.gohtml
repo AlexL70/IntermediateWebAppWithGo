@@ -18,6 +18,11 @@
             <tbody></tbody>
         </thead>
     </table>
+
+    <nav aria-label="Page navigation example">
+        <ul id="paginator" class="pagination">
+        </ul>
+    </nav>
 {{end}}
 
 {{define "js"}}
@@ -27,10 +32,20 @@
     let token = localStorage.getItem("token");
     let tbody = document.getElementById("sales-table").getElementsByTagName("tbody")[0];
 
-    document.addEventListener("DOMContentLoaded", function() {
+    function paginator(pages, currPage) {
+        let p = document.getElementById("paginator");
+        let html = `<li class="page-item"><a class="page-link pager" href="#" data-page="${currPage - 1}">Previous</a></li>`
+        for (let i = 0; i < pages; i++) {
+            html += `<li class="page-item"><a class="page-link pager" href="#" data-page="${i + 1}">${i + 1}</a></li>`
+        }
+        html += `<li class="page-item"><a class="page-link pager" href="#" data-page="${currPage + 1}">Next</a></li>`
+        p.innerHTML = html;
+    }
+
+    function updateTable(ps, cp) {
         let body = {
-           page_size: pageSize,
-           current_page: currentPage, 
+           page_size: ps,
+           current_page: cp, 
         };
 
         const requestOptions = {
@@ -71,6 +86,7 @@
                             newCell.innerHTML = `<span class="badge bg-success">Charged</span>`;
                         }
                     });
+                    paginator(data.last_page, data.current_page);
                 } else {
                     let newRow = tbody.insertRow();
                     let newCell = newRow.insertCell();
@@ -79,8 +95,10 @@
                     newCell.innerText= "No data available";
                 }
             });
+    }
 
-
+    document.addEventListener("DOMContentLoaded", function() {
+        updateTable(pageSize, currentPage);
     });
         function formatCurrency(amount) {
             let c = parseFloat(amount) / 100.0;
