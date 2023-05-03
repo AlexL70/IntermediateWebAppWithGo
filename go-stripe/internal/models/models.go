@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"math"
 	"reflect"
 	"strings"
 	"time"
@@ -292,19 +293,21 @@ func (m *DBModel) InsertToken(t *SToken, u User) (int, error) {
 	return insertEntity(&token, m)
 }
 
-func (m *DBModel) GetAllOrders() ([]*Order, error) {
-	return getOrdersByRecurring(false, m)
+func (m *DBModel) GetAllOrders() ([]*Order, int, error) {
+	return getOrdersByRecurring(m, false, math.MaxInt, 1)
 }
 
-func (m *DBModel) GetAllSubscriptions() ([]*Order, error) {
-	return getOrdersByRecurring(true, m)
+func (m *DBModel) GetAllSubscriptions() ([]*Order, int, error) {
+	return getOrdersByRecurring(m, true, math.MaxInt, 1)
 }
 
-func getOrdersByRecurring(isRecurring bool, m *DBModel) ([]*Order, error) {
+// getOrdersByRecurring returns the slice of orders
+func getOrdersByRecurring(m *DBModel, isRecurring bool, pageSize, page int) ([]*Order, int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-
 	tx := m.DB.WithContext(ctx)
+
+	offset := (page - 1) * pageSize
 
 	var orders []*Order
 	result := tx.
@@ -317,11 +320,22 @@ func getOrdersByRecurring(isRecurring bool, m *DBModel) ([]*Order, error) {
 		}}).
 		InnerJoins("Widget", tx.Where(&Widget{IsRecurring: isRecurring}, "is_recurring")).
 		Joins("Transaction").Joins("Customer").
+		Offset(offset).
+		Limit(pageSize).
 		Find(&orders)
 	if result.Error != nil {
-		return nil, fmt.Errorf("error getting all orders from DB: %w", result.Error)
+		return nil, 0, fmt.Errorf("error getting all orders from DB: %w", result.Error)
 	}
-	return orders, nil
+
+	var count int64
+	cntResult := tx.Model(&Order{}).
+		InnerJoins("Widget", tx.Where(&Widget{IsRecurring: isRecurring}, "is_recurring")).
+		Count(&count)
+	if cntResult.Error != nil {
+		return nil, 0, fmt.Errorf("error getting orders' count from DB: %w", cntResult.Error)
+	}
+
+	return orders, int(count), nil
 }
 
 func insertEntity(entity IDBEntity, m *DBModel) (int, error) {
