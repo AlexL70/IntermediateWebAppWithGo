@@ -36,7 +36,7 @@
     fetch("{{.API}}/api/admin/all-sales", requestOptions)
         .then(response => response.json())
         .then(function(data) {
-            if (data) {
+            if (data && data.length > 0) {
                 data.forEach(function(i) {
                     let newRow = tbody.insertRow();
                     let newCell = newRow.insertCell();
@@ -64,8 +64,9 @@
             } else {
                 let newRow = tbody.insertRow();
                 let newCell = newRow.insertCell();
-                newCell.setAttribute("colspan", "4");
-                newCell.innerHTML = "No data available";
+                newCell.setAttribute("colspan", "5");
+                newCell.classList.add("text-center");
+                newCell.innerText= "No data available";
             }
         });
 

@@ -13,6 +13,7 @@
                 <th>Customer</th>
                 <th>Procuct</th>
                 <th>Monthly payment</th>
+                <th>Status</th>
             </tr>
             <tbody></tbody>
         </thead>
@@ -36,7 +37,7 @@
     fetch("{{.API}}/api/admin/all-subscriptions", requestOptions)
         .then(response => response.json())
         .then(function(data) {
-            if (data) {
+            if (data && data.length > 0) {
                 data.forEach(function(i) {
                     let newRow = tbody.insertRow();
                     let newCell = newRow.insertCell();
@@ -53,11 +54,19 @@
                     newCell = newRow.insertCell();
                     item = document.createTextNode(`${formatCurrency(i.transaction.amount)}/month`);
                     newCell.appendChild(item)
+
+                    newCell = newRow.insertCell();
+                    if (i.status_id != 1) {
+                        newCell.innerHTML = `<span class="badge bg-danger">Cancelled</span>`;
+                    } else {
+                        newCell.innerHTML = `<span class="badge bg-success">Charged</span>`;
+                    }
                 });
             } else {
                 let newRow = tbody.insertRow();
                 let newCell = newRow.insertCell();
-                newCell.setAttribute("colspan", "4");
+                newCell.setAttribute("colspan", "5");
+                newCell.classList.add("text-center");
                 newCell.innerHTML = "No data available";
             }
         });

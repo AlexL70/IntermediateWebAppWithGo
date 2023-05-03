@@ -4,6 +4,7 @@
 {{end}}
 {{define "content"}}
     <h2 class="mt-5">{{index .StringMap "title"}}</h2>
+    <span id="cancelled" class="badge bg-danger d-none">Cancelled</span>
     <span id="refunded" class="badge bg-danger d-none">Refunded</span>
     <span id="charged" class="badge bg-success d-none">Charged</span>
     <hr>
@@ -68,11 +69,17 @@
                     document.getElementById("pi").value = data.transaction.payment_intent;
                     document.getElementById("charge-amount").value = data.transaction.amount;
                     document.getElementById("currency").value = data.transaction.currency;
-                    if (data.status_id === 1) {
-                        document.getElementById("refund-btn").classList.remove("d-none");
-                        document.getElementById("charged").classList.remove("d-none");
-                    } else {
-                        document.getElementById("refunded").classList.remove("d-none");
+                    switch (data.status_id) {
+                        case 1: // charged
+                            document.getElementById("refund-btn").classList.remove("d-none");
+                            document.getElementById("charged").classList.remove("d-none");
+                        break;
+                        case 2: // refunded
+                            document.getElementById("refunded").classList.remove("d-none");
+                        break;
+                        case 3: // cancelled
+                            document.getElementById("cancelled").classList.remove("d-none");
+                        break;
                     }
                 }
             });
@@ -120,10 +127,15 @@
                         if (data.error) {
                             showError(data.message);
                         } else {
-                            showSuccess("Charge refunded!");
                             document.getElementById("refund-btn").classList.add("d-none");
                             document.getElementById("charged").classList.add("d-none");
-                            document.getElementById("refunded").classList.remove("d-none");
+                            if (data.status_id == 2) { // refunded
+                                showSuccess("Charge refunded!");
+                                document.getElementById("refunded").classList.remove("d-none");
+                            } else {
+                                showSuccess("Subscription cancelled!")
+                                document.getElementById("cancelled").classList.remove("d-none");
+                            }
                         }
                     }); 
             }
