@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"math"
 	"reflect"
 	"strings"
 	"time"
@@ -297,8 +296,8 @@ func (m *DBModel) GetAllOrders(pageSize, pageNo int) ([]*Order, int, error) {
 	return getOrdersByRecurring(m, false, pageSize, pageNo)
 }
 
-func (m *DBModel) GetAllSubscriptions() ([]*Order, int, error) {
-	return getOrdersByRecurring(m, true, math.MaxInt, 1)
+func (m *DBModel) GetAllSubscriptions(pageSize, pageNo int) ([]*Order, int, error) {
+	return getOrdersByRecurring(m, true, pageSize, pageNo)
 }
 
 // getOrdersByRecurring returns the slice of orders

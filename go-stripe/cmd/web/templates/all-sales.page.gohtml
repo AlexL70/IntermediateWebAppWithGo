@@ -19,53 +19,19 @@
         </thead>
     </table>
 
-    <nav aria-label="Page navigation example">
+    <nav aria-label="Page navigation">
         <ul id="paginator" class="pagination">
         </ul>
     </nav>
 {{end}}
 
 {{define "js"}}
+<script src="/static/js/paginator.js"></script>
 <script>
     let currentPage = 1;
     let pageSize = 5;
     let token = localStorage.getItem("token");
     let tbody = document.getElementById("sales-table").getElementsByTagName("tbody")[0];
-
-    function paginator(pages, currPage) {
-        let p = document.getElementById("paginator");
-        if (p.childElementCount > 0) {
-            return;
-        }
-        let html = `<li class="page-item"><a class="page-link pager" href="#" data-page="${currPage - 1}">Previous</a></li>`
-        for (let i = 0; i < pages; i++) {
-            html += `<li class="page-item"><a class="page-link pager" href="#" data-page="${i + 1}">${i + 1}</a></li>`
-        }
-        html += `<li class="page-item"><a class="page-link pager" href="#" data-page="${currPage + 1}">Next</a></li>`
-        p.innerHTML = html;
-        p.childNodes[currentPage].firstChild.classList.add("active");
-
-        let pgBtns = document.getElementsByClassName("pager");
-        for (let j = 0; j < pgBtns.length; j++) {
-            pgBtns[j].addEventListener("click", function(evt){
-                let pageNo = evt.target.getAttribute("data-page");
-                console.log(`clicked and desired page is ${pageNo}`);
-                if (pageNo > 0 && pageNo <= pages) {
-                    currentPage = pageNo;
-                    let p = document.getElementById("paginator"); 
-                    // remove active attribute from all pages
-                    p.childNodes.forEach(el => el.firstChild.classList.remove("active"));
-                    // get data from the server
-                    updateTable(pageSize, currentPage);
-                    // set active attribute to the page that is currently active
-                    p.childNodes[parseInt(currentPage, 10)].firstChild.classList.add("active");
-                    // update previous/next page attributes
-                    p.childNodes[0].firstChild.setAttribute("data-page", parseInt(currentPage, 10) - 1);
-                    p.childNodes[pages + 1].firstChild.setAttribute("data-page", parseInt(currentPage, 10) + 1);
-                }
-            });
-        }
-    }
 
     function updateTable(ps, cp) {
         let body = {
@@ -126,12 +92,13 @@
     document.addEventListener("DOMContentLoaded", function() {
         updateTable(pageSize, currentPage);
     });
-        function formatCurrency(amount) {
-            let c = parseFloat(amount) / 100.0;
-            return c.toLocaleString("en-US", {
-                style: "currency",
-                currency: "USD",
-            });
-        }
+
+    function formatCurrency(amount) {
+        let c = parseFloat(amount) / 100.0;
+        return c.toLocaleString("en-US", {
+            style: "currency",
+            currency: "USD",
+        });
+    }
 </script>
 {{end}}

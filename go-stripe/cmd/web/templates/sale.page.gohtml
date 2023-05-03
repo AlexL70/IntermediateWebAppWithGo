@@ -129,13 +129,8 @@
                         } else {
                             document.getElementById("refund-btn").classList.add("d-none");
                             document.getElementById("charged").classList.add("d-none");
-                            if (data.status_id == 2) { // refunded
-                                showSuccess("Charge refunded!");
-                                document.getElementById("refunded").classList.remove("d-none");
-                            } else {
-                                showSuccess("Subscription cancelled!")
-                                document.getElementById("cancelled").classList.remove("d-none");
-                            }
+                            showSuccess("{{index .StringMap "refunded-msg"}}")
+                            document.getElementById("{{index .StringMap "refunded-status"}}").classList.remove("d-none");
                         }
                     }); 
             }

@@ -38,11 +38,13 @@ func (app *application) AllSubscriptions(w http.ResponseWriter, r *http.Request)
 
 func (app *application) ShowSale(w http.ResponseWriter, r *http.Request) {
 	td := &templateData{StringMap: map[string]string{
-		"title":       "Sale",
-		"backUrl":     "/admin/all-sales",
-		"backCaption": "Back to all sales",
-		"refund-url":  "/api/admin/refund",
-		"refund-btn":  "Refund order",
+		"title":           "Sale",
+		"backUrl":         "/admin/all-sales",
+		"backCaption":     "Back to all sales",
+		"refund-url":      "/api/admin/refund",
+		"refund-btn":      "Refund order",
+		"refunded-msg":    "Charge refunded!",
+		"refunded-status": "refunded",
 	},
 	}
 	if err := app.renderTemplate(w, r, "sale", td); err != nil {
@@ -52,11 +54,13 @@ func (app *application) ShowSale(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) ShowSubscription(w http.ResponseWriter, r *http.Request) {
 	td := &templateData{StringMap: map[string]string{
-		"title":       "Subscription",
-		"backUrl":     "/admin/all-subscriptions",
-		"backCaption": "Back to all subscriptions",
-		"refund-url":  "/api/admin/cancel-subscription",
-		"refund-btn":  "Cancel subscription",
+		"title":           "Subscription",
+		"backUrl":         "/admin/all-subscriptions",
+		"backCaption":     "Back to all subscriptions",
+		"refund-url":      "/api/admin/cancel-subscription",
+		"refund-btn":      "Cancel subscription",
+		"refunded-msg":    "Subscription cancelled!",
+		"refunded-status": "cancelled",
 	},
 	}
 	if err := app.renderTemplate(w, r, "sale", td); err != nil {

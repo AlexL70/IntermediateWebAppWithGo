@@ -19,64 +19,86 @@
         </thead>
     </table>
 
+    <nav aria-label="Page navigation">
+        <ul id="paginator" class="pagination">
+        </ul>
+    </nav>
 {{end}}
 
 {{define "js"}}
+<script src="/static/js/paginator.js"></script>
 <script>
+    let currentPage = 1;
+    let pageSize = 5;
     let token = localStorage.getItem("token");
     let tbody = document.getElementById("subscriptions-table").getElementsByTagName("tbody")[0];
-    const requestOptions = {
-        method: "post",
-        headers: {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-        },
-    };
 
-    fetch("{{.API}}/api/admin/all-subscriptions", requestOptions)
-        .then(response => response.json())
-        .then(function(data) {
-            if (data && data.length > 0) {
-                data.forEach(function(i) {
+    function updateTable(ps, cp) {
+        let body = {
+           page_size: parseInt(ps, 10),
+           current_page: parseInt(cp, 10), 
+        };
+
+        const requestOptions = {
+            method: "post",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify(body),
+        };
+
+        fetch("{{.API}}/api/admin/all-subscriptions", requestOptions)
+            .then(response => response.json())
+            .then(function(data) {
+                tbody.innerHTML = "";
+                if (data.page_data && data.page_data.length > 0) {
+                    data.page_data.forEach(function(i) {
+                        let newRow = tbody.insertRow();
+                        let newCell = newRow.insertCell();
+                        newCell.innerHTML = `<a href="/admin/subscriptions/${i.id}">Order ${i.id}</a>`;
+
+                        newCell = newRow.insertCell();
+                        let item = document.createTextNode(`${i.customer.last_name}, ${i.customer.first_name}`);
+                        newCell.appendChild(item);
+
+                        newCell = newRow.insertCell();
+                        item = document.createTextNode(i.widget.name);
+                        newCell.appendChild(item)
+
+                        newCell = newRow.insertCell();
+                        item = document.createTextNode(`${formatCurrency(i.transaction.amount)}/month`);
+                        newCell.appendChild(item)
+
+                        newCell = newRow.insertCell();
+                        if (i.status_id != 1) {
+                            newCell.innerHTML = `<span class="badge bg-danger">Cancelled</span>`;
+                        } else {
+                            newCell.innerHTML = `<span class="badge bg-success">Charged</span>`;
+                        }
+                    });
+                    paginator(data.last_page, data.current_page);
+                } else {
                     let newRow = tbody.insertRow();
                     let newCell = newRow.insertCell();
-                    newCell.innerHTML = `<a href="/admin/subscriptions/${i.id}">Order ${i.id}</a>`;
-
-                    newCell = newRow.insertCell();
-                    let item = document.createTextNode(`${i.customer.last_name}, ${i.customer.first_name}`);
-                    newCell.appendChild(item);
-
-                    newCell = newRow.insertCell();
-                    item = document.createTextNode(i.widget.name);
-                    newCell.appendChild(item)
-
-                    newCell = newRow.insertCell();
-                    item = document.createTextNode(`${formatCurrency(i.transaction.amount)}/month`);
-                    newCell.appendChild(item)
-
-                    newCell = newRow.insertCell();
-                    if (i.status_id != 1) {
-                        newCell.innerHTML = `<span class="badge bg-danger">Cancelled</span>`;
-                    } else {
-                        newCell.innerHTML = `<span class="badge bg-success">Charged</span>`;
-                    }
-                });
-            } else {
-                let newRow = tbody.insertRow();
-                let newCell = newRow.insertCell();
-                newCell.setAttribute("colspan", "5");
-                newCell.classList.add("text-center");
-                newCell.innerHTML = "No data available";
-            }
-        });
-
-        function formatCurrency(amount) {
-            let c = parseFloat(amount) / 100.0;
-            return c.toLocaleString("en-US", {
-                style: "currency",
-                currency: "USD",
+                    newCell.setAttribute("colspan", "5");
+                    newCell.classList.add("text-center");
+                    newCell.innerHTML = "No data available";
+                }
             });
-        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        updateTable(pageSize, currentPage);
+    });
+
+    function formatCurrency(amount) {
+        let c = parseFloat(amount) / 100.0;
+        return c.toLocaleString("en-US", {
+            style: "currency",
+            currency: "USD",
+        });
+    }
 </script>
 {{end}}

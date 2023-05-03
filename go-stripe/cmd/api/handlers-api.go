@@ -501,13 +501,26 @@ func (app *application) AllSales(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) AllSubscriptions(w http.ResponseWriter, r *http.Request) {
-	allSubscriptions, _, err := app.DB.GetAllSubscriptions()
+	var pp paginationRequest
+	err := app.readJSON(w, r, &pp)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.BadRequest(w, r, fmt.Errorf("incorrect pagination data; %w", err))
+		return
+	}
+	allSubscriptions, count, err := app.DB.GetAllSubscriptions(pp.PageSize, pp.CurrentPage)
 	if err != nil {
 		app.errorLog.Println(err)
 		app.internalError(w)
 		return
 	}
-	app.writeJson(w, http.StatusOK, allSubscriptions)
+	resp := paginatedResponse[models.Order]{
+		paginationRequest: pp,
+		LastPage:          lastPageNo(count, pp.PageSize),
+		TotalRecords:      count,
+		PageData:          allSubscriptions,
+	}
+	app.writeJson(w, http.StatusOK, resp)
 }
 
 func (app *application) GetSale(w http.ResponseWriter, r *http.Request) {
