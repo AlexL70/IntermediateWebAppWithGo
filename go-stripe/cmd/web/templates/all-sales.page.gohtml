@@ -28,7 +28,7 @@
 {{define "js"}}
 <script>
     let currentPage = 1;
-    let pageSize = 3;
+    let pageSize = 5;
     let token = localStorage.getItem("token");
     let tbody = document.getElementById("sales-table").getElementsByTagName("tbody")[0];
 
@@ -40,6 +40,18 @@
         }
         html += `<li class="page-item"><a class="page-link pager" href="#" data-page="${currPage + 1}">Next</a></li>`
         p.innerHTML = html;
+
+        let pgBtns = document.getElementsByClassName("pager");
+        for (let j = 0; j < pgBtns.length; j++) {
+            pgBtns[j].addEventListener("click", function(evt){
+                let pageNo = evt.target.getAttribute("data-page");
+                console.log(`clicked and desired page is ${pageNo}`);
+                if (pageNo > 0 && pageNo <= pages) {
+                    currentPage = +pageNo;
+                    updateTable(pageSize, currentPage);
+                }
+            });
+        }
     }
 
     function updateTable(ps, cp) {
@@ -61,6 +73,7 @@
         fetch("{{.API}}/api/admin/all-sales", requestOptions)
             .then(response => response.json())
             .then(function(data) {
+                tbody.innerHTML = "";
                 if (data.page_data && data.page_data.length > 0) {
                     data.page_data.forEach(function(i) {
                         let newRow = tbody.insertRow();
