@@ -478,13 +478,26 @@ func (app *application) ResetPassword(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) AllSales(w http.ResponseWriter, r *http.Request) {
-	allSales, _, err := app.DB.GetAllOrders()
+	var pp paginationRequest
+	err := app.readJSON(w, r, &pp)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.BadRequest(w, r, fmt.Errorf("incorrect pagination data; %w", err))
+		return
+	}
+	allSales, count, err := app.DB.GetAllOrders(pp.PageSize, pp.CurrentPage)
 	if err != nil {
 		app.errorLog.Println(err)
 		app.internalError(w)
 		return
 	}
-	app.writeJson(w, http.StatusOK, allSales)
+	resp := paginatedResponse[models.Order]{
+		paginationRequest: pp,
+		LastPage:          lastPageNo(count, pp.PageSize),
+		TotalRecords:      count,
+		PageData:          allSales,
+	}
+	app.writeJson(w, http.StatusOK, resp)
 }
 
 func (app *application) AllSubscriptions(w http.ResponseWriter, r *http.Request) {
@@ -647,4 +660,12 @@ func (app *application) SaveTransaction(txn models.Transaction) (int, error) {
 
 func (app *application) SaveOrder(order models.Order) (int, error) {
 	return app.DB.InsertOrder(order)
+}
+
+func lastPageNo(recordCount, pageSize int) int {
+	lastNo := recordCount / pageSize
+	if recordCount%pageSize > 0 {
+		lastNo++
+	}
+	return lastNo
 }

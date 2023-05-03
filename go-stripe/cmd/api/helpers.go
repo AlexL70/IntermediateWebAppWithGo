@@ -11,16 +11,28 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type responsePayload = struct {
+type responsePayload struct {
 	Error   bool   `json:"error"`
 	Message string `json:"message"`
 }
 
 // authJsonPayload is for returning error/success information to client
-type authJsonPayload = struct {
+type authJsonPayload struct {
 	Error   bool          `json:"error"`
 	Message string        `json:"message"`
 	Token   models.SToken `json:"authentication_token"`
+}
+
+type paginationRequest struct {
+	PageSize    int `json:"page_size"`
+	CurrentPage int `json:"current_page"`
+}
+
+type paginatedResponse[E any] struct {
+	paginationRequest
+	LastPage     int  `json:"last_page"`
+	TotalRecords int  `json:"total_records"`
+	PageData     []*E `json:"page_data"`
 }
 
 // writeJson writes arbitrary data out (to response writer) as json

@@ -293,8 +293,8 @@ func (m *DBModel) InsertToken(t *SToken, u User) (int, error) {
 	return insertEntity(&token, m)
 }
 
-func (m *DBModel) GetAllOrders() ([]*Order, int, error) {
-	return getOrdersByRecurring(m, false, math.MaxInt, 1)
+func (m *DBModel) GetAllOrders(pageSize, pageNo int) ([]*Order, int, error) {
+	return getOrdersByRecurring(m, false, pageSize, pageNo)
 }
 
 func (m *DBModel) GetAllSubscriptions() ([]*Order, int, error) {
