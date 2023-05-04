@@ -68,6 +68,22 @@ func (app *application) ShowSubscription(w http.ResponseWriter, r *http.Request)
 	}
 }
 
+// AllUsers shows list of all admin users
+func (app *application) AllUsers(w http.ResponseWriter, r *http.Request) {
+	td := &templateData{}
+	if err := app.renderTemplate(w, r, "all-users", td); err != nil {
+		app.errorLog.Println(err)
+	}
+}
+
+// OneUser shows one admin user for add/edit/delete
+func (app *application) OneUser(w http.ResponseWriter, r *http.Request) {
+	td := &templateData{}
+	if err := app.renderTemplate(w, r, "one-user", td); err != nil {
+		app.errorLog.Println(err)
+	}
+}
+
 // Home displays the home page
 func (app *application) Home(w http.ResponseWriter, r *http.Request) {
 	td := &templateData{}
