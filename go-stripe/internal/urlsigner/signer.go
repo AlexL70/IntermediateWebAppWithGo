@@ -31,7 +31,7 @@ func (s *Signer) VerifyToken(token string) bool {
 	crypt := goalone.New(s.Secret, goalone.Timestamp)
 	_, err := crypt.Unsign([]byte(token))
 	if err != nil {
-		fmt.Println(fmt.Sprintf("error unsigning token: %w", err))
+		fmt.Println(fmt.Errorf("error unsigning token: %w", err))
 		return false
 	}
 	return true

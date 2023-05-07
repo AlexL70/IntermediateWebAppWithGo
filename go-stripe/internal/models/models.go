@@ -33,11 +33,12 @@ func NewModels(db *gorm.DB) Models {
 type IDBEntity interface {
 	GetID() int
 	SetCreated()
+	SetUpdated()
 }
 type DBEntity struct {
-	ID        int       `json:"id" gorm:"primaryKey"`
-	CreatedAt time.Time `json:"-"`
-	UpdatedAt time.Time `json:"-"`
+	ID        int       `model-copy:"ignore" json:"id" gorm:"primaryKey"`
+	CreatedAt time.Time `model-copy:"ignore" json:"-"`
+	UpdatedAt time.Time `model-copy:"ignore" json:"-"`
 }
 
 func (e DBEntity) GetID() int {
@@ -46,6 +47,10 @@ func (e DBEntity) GetID() int {
 
 func (e *DBEntity) SetCreated() {
 	e.CreatedAt = time.Now()
+	e.UpdatedAt = time.Now()
+}
+
+func (e *DBEntity) SetUpdated() {
 	e.UpdatedAt = time.Now()
 }
 
@@ -107,7 +112,7 @@ type User struct {
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 	Email     string `json:"email"`
-	Password  string `json:"password"`
+	Password  string `model-copy:"ignore" json:"password"`
 }
 
 // Token is a type for saving tokens (SToken) to DB
@@ -337,6 +342,55 @@ func getOrdersByRecurring(m *DBModel, isRecurring bool, pageSize, page int) ([]*
 	return orders, int(count), nil
 }
 
+// GetAllUsers fetches list of users from the DB ordered by LastName and FirstName
+func (m *DBModel) GetAllUsers(pageSize, page int) ([]*User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	tx := m.DB.WithContext(ctx)
+
+	offset := (page - 1) * pageSize
+	var users []*User
+	err := tx.
+		Clauses(clause.OrderBy{Columns: []clause.OrderByColumn{
+			{
+				Column: clause.Column{Table: "users", Name: "last_name"},
+				Desc:   false,
+			},
+			{
+				Column: clause.Column{Table: "users", Name: "first_name"},
+				Desc:   false,
+			},
+		}}).
+		Offset(offset).Limit(pageSize).
+		Find(&users).Error
+	if err != nil {
+		return nil, fmt.Errorf("error fetching users: %w", err)
+	}
+	return users, nil
+}
+
+// GetUserByID fetches one user from DB by id
+func (m *DBModel) GetUserByID(id int) (User, error) {
+	var user User
+	err := getEntityById(id, m, &user)
+	return user, err
+}
+
+// InsertUser adds a new user to DB
+func (m *DBModel) InsertUser(u User) (int, error) {
+	return insertEntity(&u, m)
+}
+
+// UpdateUser updates user's record in DB
+func (m *DBModel) UpdateUser(u User) error {
+	return updateEntity(&u, m)
+}
+
+// DeleteUser removes user from DB
+func (m *DBModel) DeleteUser(u User) error {
+	return deleteEntity(&u, m)
+}
+
 func insertEntity(entity IDBEntity, m *DBModel) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -350,6 +404,25 @@ func insertEntity(entity IDBEntity, m *DBModel) (int, error) {
 	return entity.GetID(), nil
 }
 
+func updateEntity(entity IDBEntity, m *DBModel) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	tx := m.DB.WithContext(ctx)
+	typeName := reflect.TypeOf(entity).String()
+	var oldEntity IDBEntity
+	if err := tx.First(&oldEntity, entity.GetID()).Error; err != nil {
+		return fmt.Errorf("error reading %s from DB: %w", typeName, err)
+	}
+	if err := modelCopy(&oldEntity, entity); err != nil {
+		return fmt.Errorf("error updating %s in DB: %w", typeName, err)
+	}
+	oldEntity.SetUpdated()
+	if err := tx.Save(oldEntity).Error; err != nil {
+		return fmt.Errorf("error updating %s in DB: %w", typeName, err)
+	}
+	return nil
+}
+
 func getEntityById(id int, m *DBModel, entity any) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -359,6 +432,18 @@ func getEntityById(id int, m *DBModel, entity any) error {
 	typeName := reflect.TypeOf(entity).String()
 	if err := tx.First(entity, id).Error; err != nil {
 		return fmt.Errorf("error reading %s from DB: %w", typeName, err)
+	}
+
+	return nil
+}
+
+func deleteEntity(entity IDBEntity, m *DBModel) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	tx := m.DB.WithContext(ctx).Delete(entity)
+	if err := tx.Error; err != nil {
+		return fmt.Errorf("error deleting %s: %w", reflect.TypeOf(entity), err)
 	}
 
 	return nil
