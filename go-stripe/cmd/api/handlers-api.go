@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -656,6 +657,16 @@ func (app *application) CancelSubscription(w http.ResponseWriter, r *http.Reques
 		Message: "Subscription cancelled",
 	}
 	app.writeJson(w, http.StatusOK, resp)
+}
+
+func (app *application) AllUsers(w http.ResponseWriter, r *http.Request) {
+	allUsers, err := app.DB.GetAllUsers(math.MaxInt, 1)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.internalError(w)
+		return
+	}
+	app.writeJson(w, http.StatusOK, allUsers)
 }
 
 func (app *application) SaveCustomer(firstName, lastName, email string) (int, error) {
