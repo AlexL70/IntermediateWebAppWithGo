@@ -343,7 +343,7 @@ func getOrdersByRecurring(m *DBModel, isRecurring bool, pageSize, page int) ([]*
 }
 
 // GetAllUsers fetches list of users from the DB ordered by LastName and FirstName
-func (m *DBModel) GetAllUsers(pageSize, page int) ([]*User, error) {
+func (m *DBModel) GetAllUsers(pageSize, page int) ([]*User, int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	tx := m.DB.WithContext(ctx)
@@ -364,9 +364,14 @@ func (m *DBModel) GetAllUsers(pageSize, page int) ([]*User, error) {
 		Offset(offset).Limit(pageSize).
 		Find(&users).Error
 	if err != nil {
-		return nil, fmt.Errorf("error fetching users: %w", err)
+		return nil, 0, fmt.Errorf("error fetching users: %w", err)
 	}
-	return users, nil
+	var count int64
+	err = tx.Model(&User{}).Count(&count).Error
+	if err != nil {
+		return nil, 0, fmt.Errorf("error users' count from DB: %w", err)
+	}
+	return users, int(count), nil
 }
 
 // GetUserByID fetches one user from DB by id

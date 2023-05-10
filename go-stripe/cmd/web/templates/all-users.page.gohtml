@@ -16,13 +16,82 @@
                 <th>Email</th>
             </tr>
         </thead>
-        <body></body>
+        <tbody></tbody>
     </table>
+
+    <nav aria-label="Page navigation">
+        <ul id="paginator" class="pagination">
+        </ul>
+    </nav>
 {{end}}
 
 {{define "js"}}
+<script src="/static/js/paginator.js"></script>
 <script>
-    let tBody = document.getElementById("user-table").getElementsByTagName("body")[0];
-    console.log(tBody);
+    let currentPage = 1;
+    let pageSize = 5;
+    let tbody = document.getElementById("user-table").getElementsByTagName("tbody")[0];
+    let token = localStorage.getItem("token");
+
+    function updateTable(ps, cp) {
+        let body = {
+           page_size: parseInt(ps, 10),
+           current_page: parseInt(cp, 10), 
+        };
+
+        const requestOptions = {
+            method: "post",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify(body),
+        };
+
+        fetch("{{.API}}/api/admin/all-users", requestOptions)
+            .then(response => response.json())
+            .then(function(data) {
+                console.log(data);
+                tbody.innerHTML = "";
+                if (data.page_data && data.page_data.length > 0) {
+                    //data.page_data.forEach(function(i) {
+                    //    let newRow = tbody.insertRow();
+                    //    let newCell = newRow.insertCell();
+                    //    newCell.innerHTML = `<a href="/admin/users/${i.id}">Order ${i.id}</a>`;
+
+                    //    newCell = newRow.insertCell();
+                    //    let item = document.createTextNode(`${i.customer.last_name}, ${i.customer.first_name}`);
+                    //    newCell.appendChild(item);
+
+                    //    newCell = newRow.insertCell();
+                    //    item = document.createTextNode(i.widget.name);
+                    //    newCell.appendChild(item)
+
+                    //    newCell = newRow.insertCell();
+                    //    item = document.createTextNode(formatCurrency(i.transaction.amount));
+                    //    newCell.appendChild(item)
+
+                    //    newCell = newRow.insertCell();
+                    //    if (i.status_id != 1) {
+                    //        newCell.innerHTML = `<span class="badge bg-danger">Refunded</span>`;
+                    //    } else {
+                    //        newCell.innerHTML = `<span class="badge bg-success">Charged</span>`;
+                    //    }
+                    //});
+                    paginator(data.last_page, data.current_page);
+                } else {
+                    let newRow = tbody.insertRow();
+                    let newCell = newRow.insertCell();
+                    newCell.setAttribute("colspan", "5");
+                    newCell.classList.add("text-center");
+                    newCell.innerText= "No data available";
+                }
+            });
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        updateTable(pageSize, currentPage);
+    });
 </script>
 {{end}}

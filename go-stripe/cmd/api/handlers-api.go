@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -660,13 +659,26 @@ func (app *application) CancelSubscription(w http.ResponseWriter, r *http.Reques
 }
 
 func (app *application) AllUsers(w http.ResponseWriter, r *http.Request) {
-	allUsers, err := app.DB.GetAllUsers(math.MaxInt, 1)
+	var pr paginationRequest
+	err := app.readJSON(w, r, &pr)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.BadRequest(w, r, fmt.Errorf("incorrect pagination data; %w", err))
+		return
+	}
+	allUsers, count, err := app.DB.GetAllUsers(pr.PageSize, pr.CurrentPage)
 	if err != nil {
 		app.errorLog.Println(err)
 		app.internalError(w)
 		return
 	}
-	app.writeJson(w, http.StatusOK, allUsers)
+	resp := paginatedResponse[models.User]{
+		paginationRequest: pr,
+		LastPage:          lastPageNo(count, pr.PageSize),
+		TotalRecords:      count,
+		PageData:          allUsers,
+	}
+	app.writeJson(w, http.StatusOK, resp)
 }
 
 func (app *application) SaveCustomer(firstName, lastName, email string) (int, error) {
