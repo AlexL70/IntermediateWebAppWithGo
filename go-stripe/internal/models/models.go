@@ -393,6 +393,14 @@ func (m *DBModel) UpdateUser(u User) error {
 
 // DeleteUser removes user from DB
 func (m *DBModel) DeleteUser(u User) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	tx := m.DB.WithContext(ctx)
+	err := tx.Where(&Token{UserID: u.ID}).Delete(&Token{}).Error
+	if err != nil {
+		return fmt.Errorf("error deleting user token(s): %w", err)
+	}
+
 	return deleteEntity(&u, m)
 }
 
