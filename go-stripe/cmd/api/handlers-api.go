@@ -681,6 +681,25 @@ func (app *application) AllUsers(w http.ResponseWriter, r *http.Request) {
 	app.writeJson(w, http.StatusOK, resp)
 }
 
+func (app *application) OneUser(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	userID, err := strconv.Atoi(id)
+	if err != nil {
+		e := fmt.Errorf("error converting user id to int: %w", err)
+		app.errorLog.Println(e)
+		app.BadRequest(w, r, e)
+		return
+	}
+	user, err := app.DB.GetUserByID(userID)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.BadRequest(w, r, errors.New("user not found"))
+		return
+	}
+	user.Password = ""
+	app.writeJson(w, http.StatusOK, user)
+}
+
 func (app *application) SaveCustomer(firstName, lastName, email string) (int, error) {
 	customer := models.Customer{
 		FirstName: firstName,
