@@ -414,14 +414,14 @@ func updateEntity(entity IDBEntity, m *DBModel) error {
 	defer cancel()
 	tx := m.DB.WithContext(ctx)
 	typeName := reflect.TypeOf(entity).String()
-	var oldEntity IDBEntity
-	if err := tx.First(&oldEntity, entity.GetID()).Error; err != nil {
+	oldEntity := reflect.New(reflect.Indirect(reflect.ValueOf(entity)).Type()).Interface()
+	if err := tx.First(oldEntity, entity.GetID()).Error; err != nil {
 		return fmt.Errorf("error reading %s from DB: %w", typeName, err)
 	}
-	if err := modelCopy(&oldEntity, entity); err != nil {
+	if err := modelCopy(oldEntity, entity); err != nil {
 		return fmt.Errorf("error updating %s in DB: %w", typeName, err)
 	}
-	oldEntity.SetUpdated()
+	oldEntity.(IDBEntity).SetUpdated()
 	if err := tx.Save(oldEntity).Error; err != nil {
 		return fmt.Errorf("error updating %s in DB: %w", typeName, err)
 	}
