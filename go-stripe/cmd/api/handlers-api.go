@@ -764,6 +764,24 @@ func (app *application) EditUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (app *application) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	userID, err := strconv.Atoi(id)
+	if err != nil {
+		e := fmt.Errorf("error converting user id to int: %w", err)
+		app.errorLog.Println(e)
+		app.BadRequest(w, r, e)
+		return
+	}
+	err = app.DB.DeleteUser(models.User{DBEntity: models.DBEntity{ID: userID}})
+	if err != nil {
+		app.errorLog.Println(err)
+		app.BadRequest(w, r, errors.New("user not found"))
+		return
+	}
+	app.writeJson(w, http.StatusOK, responsePayload{Error: false, Message: "User deleted successfully"})
+}
+
 func (app *application) SaveCustomer(firstName, lastName, email string) (int, error) {
 	customer := models.Customer{
 		FirstName: firstName,
