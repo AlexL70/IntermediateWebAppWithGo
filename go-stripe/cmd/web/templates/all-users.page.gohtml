@@ -52,33 +52,18 @@
         fetch("{{.API}}/api/admin/all-users", requestOptions)
             .then(response => response.json())
             .then(function(data) {
-                console.log(data);
                 tbody.innerHTML = "";
                 if (data.page_data && data.page_data.length > 0) {
-                    //data.page_data.forEach(function(i) {
-                    //    let newRow = tbody.insertRow();
-                    //    let newCell = newRow.insertCell();
-                    //    newCell.innerHTML = `<a href="/admin/users/${i.id}">Order ${i.id}</a>`;
+                    data.page_data.forEach(function(i) {
+                        let newRow = tbody.insertRow();
+                        let newCell = newRow.insertCell();
+                        newCell.innerHTML = `<a href="/admin/all-users/${i.id}">${i.last_name}, ${i.first_name}</a>`;
 
-                    //    newCell = newRow.insertCell();
-                    //    let item = document.createTextNode(`${i.customer.last_name}, ${i.customer.first_name}`);
-                    //    newCell.appendChild(item);
+                        newCell = newRow.insertCell();
+                        let item = document.createTextNode(i.email);
+                        newCell.appendChild(item);
 
-                    //    newCell = newRow.insertCell();
-                    //    item = document.createTextNode(i.widget.name);
-                    //    newCell.appendChild(item)
-
-                    //    newCell = newRow.insertCell();
-                    //    item = document.createTextNode(formatCurrency(i.transaction.amount));
-                    //    newCell.appendChild(item)
-
-                    //    newCell = newRow.insertCell();
-                    //    if (i.status_id != 1) {
-                    //        newCell.innerHTML = `<span class="badge bg-danger">Refunded</span>`;
-                    //    } else {
-                    //        newCell.innerHTML = `<span class="badge bg-success">Charged</span>`;
-                    //    }
-                    //});
+                    });
                     paginator(data.last_page, data.current_page);
                 } else {
                     let newRow = tbody.insertRow();
