@@ -700,6 +700,70 @@ func (app *application) OneUser(w http.ResponseWriter, r *http.Request) {
 	app.writeJson(w, http.StatusOK, user)
 }
 
+func (app *application) EditUser(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	userID, err := strconv.Atoi(id)
+	if err != nil {
+		e := fmt.Errorf("error converting user id to int: %w", err)
+		app.errorLog.Println(e)
+		app.BadRequest(w, r, e)
+		return
+	}
+
+	var user models.User
+	err = app.readJSON(w, r, &user)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.BadRequest(w, r, err)
+		return
+	}
+
+	//	Save user
+	var status int
+	if userID > 0 { // update existing
+		status = http.StatusOK
+		user.ID = userID
+		err = app.DB.UpdateUser(user)
+	} else { // create new
+		newHash, err := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
+		if err != nil {
+			app.errorLog.Println(err)
+			app.BadRequest(w, r, errors.New("error updating password"))
+			return
+		}
+		user.Password = string(newHash)
+		user.ID, err = app.DB.InsertUser(user)
+		status = http.StatusCreated
+	}
+	if err != nil {
+		app.errorLog.Println(err)
+		app.BadRequest(w, r, err)
+		return
+	}
+
+	//  Update password if necessary
+	if userID > 0 && len(user.Password) > 0 {
+		newHash, err := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
+		if err != nil {
+			app.errorLog.Println(err)
+			app.BadRequest(w, r, errors.New("error updating password"))
+			return
+		}
+		err = app.DB.UpdatePasswordForUser(user, string(newHash))
+		if err != nil {
+			app.errorLog.Println(err)
+			app.BadRequest(w, r, errors.New("error updating password"))
+			return
+		}
+	}
+
+	//	write response
+	app.writeJson(w, status, responsePayload{
+		Error:   false,
+		Message: "User was successfully saved to the DB",
+	})
+}
+
 func (app *application) SaveCustomer(firstName, lastName, email string) (int, error) {
 	customer := models.Customer{
 		FirstName: firstName,
