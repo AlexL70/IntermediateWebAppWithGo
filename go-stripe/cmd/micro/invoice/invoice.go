@@ -60,11 +60,16 @@ func main() {
 
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+
 	app := &application{
 		config:   cfg,
 		infoLog:  infoLog,
 		errorLog: errorLog,
 		version:  version,
+	}
+	err = app.CreateDirIfNotExists("./invoices")
+	if err != nil {
+		log.Fatal(err)
 	}
 	err = app.serve()
 	if err != nil {

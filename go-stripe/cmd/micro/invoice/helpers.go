@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 )
 
 type responsePayload struct {
@@ -66,4 +67,15 @@ func (app *application) internalError(w http.ResponseWriter) error {
 		Message: "internal server error; if it repeats, please contact the support",
 	}
 	return app.writeJson(w, http.StatusInternalServerError, payload)
+}
+
+func (app *application) CreateDirIfNotExists(path string) error {
+	const mode = 0755
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		err := os.Mkdir(path, mode)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
