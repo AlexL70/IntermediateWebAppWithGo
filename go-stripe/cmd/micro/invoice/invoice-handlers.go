@@ -3,28 +3,15 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"time"
 
+	common_models "github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/common"
 	"github.com/phpdave11/gofpdf"
 	"github.com/phpdave11/gofpdf/contrib/gofpdi"
 )
 
-// Order is the type for all orders
-type Order struct {
-	ID        int       `json:"id"`
-	StatusID  int       `json:"status_id"`
-	Quantity  int       `json:"quantity"`
-	Amount    int       `json:"amount"`
-	Product   string    `json:"product"`
-	FirstName string    `json:"first_name"`
-	LastName  string    `json:"last_name"`
-	Email     string    `json:"email"`
-	CreatedAt time.Time `json:"created_at"`
-}
-
 func (app *application) CreateAndSendInvoice(w http.ResponseWriter, r *http.Request) {
 	// receive json
-	var order Order
+	var order common_models.Order
 	err := app.readJSON(w, r, &order)
 	if err != nil {
 		app.errorLog.Println(err)
@@ -58,7 +45,7 @@ func (app *application) CreateAndSendInvoice(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-func (app *application) createInvoicePDF(order Order) error {
+func (app *application) createInvoicePDF(order common_models.Order) error {
 	pdf := gofpdf.New("P", "mm", "Letter", "")
 	pdf.SetMargins(10, 13, 10)
 	pdf.SetAutoPageBreak(true, 0)

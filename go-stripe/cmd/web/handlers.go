@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/cards"
+	common_models "github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/common"
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/encryption"
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/models"
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/urlsigner"
@@ -218,14 +221,52 @@ func (app *application) PaymentSucceeded(w http.ResponseWriter, r *http.Request)
 			UpdatedAt: time.Now(),
 		},
 	}
-	_, err = app.SaveOrder(order)
+	orderID, err := app.SaveOrder(order)
 	if err != nil {
 		app.errorLog.Println(err)
 		return
 	}
 
+	// call the microservice that forms invoice and send it to customer
+	invoice := common_models.Order{
+		ID:        orderID,
+		Amount:    order.Amount,
+		Product:   "Widget",
+		Quantity:  order.Quantity,
+		FirstName: txnData.FirstName,
+		LastName:  txnData.LastName,
+		Email:     txnData.Email,
+		CreatedAt: time.Now(),
+	}
+	err = app.callInvoiceMicro(invoice)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.Session.Put(r.Context(), "error", fmt.Sprintf("Error generating invoice: %s", err))
+	}
+
 	app.Session.Put(r.Context(), "receipt", txnData)
 	http.Redirect(w, r, "/receipt", http.StatusSeeOther)
+}
+
+func (app *application) callInvoiceMicro(inv common_models.Order) error {
+	url := "http://localhost:5000/invoice/create-and-send"
+	out, err := json.MarshalIndent(inv, "", "  ")
+	if err != nil {
+		return fmt.Errorf("error marshalling invoice: %w", err)
+	}
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(out))
+	if err != nil {
+		return fmt.Errorf("error creating request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("error calling invoice microservice: %w", err)
+	}
+	defer resp.Body.Close()
+	app.infoLog.Println(resp.Body)
+	return nil
 }
 
 func (app *application) Receipt(w http.ResponseWriter, r *http.Request) {
