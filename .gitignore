@@ -17,3 +17,6 @@
 dist
 tmp
 .vscode
+
+# Directories internally used in app
+go-stripe/invoices/
