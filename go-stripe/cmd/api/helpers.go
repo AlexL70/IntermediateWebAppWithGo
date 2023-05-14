@@ -16,6 +16,11 @@ type responsePayload struct {
 	Message string `json:"message"`
 }
 
+type validationResponsePayload struct {
+	responsePayload
+	Errors map[string]string `json:"errors"`
+}
+
 // authJsonPayload is for returning error/success information to client
 type authJsonPayload struct {
 	Error   bool          `json:"error"`
@@ -110,4 +115,12 @@ func (app *application) passwordMatches(hash, password string) (bool, error) {
 		}
 	}
 	return true, nil
+}
+
+func (app *application) failedValidation(w http.ResponseWriter, r *http.Request, errors map[string]string) {
+	payload := validationResponsePayload{
+		responsePayload: responsePayload{Error: true, Message: "Validation failed!"},
+		Errors:          errors,
+	}
+	app.writeJson(w, http.StatusUnprocessableEntity, payload)
 }
