@@ -15,6 +15,7 @@ import (
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/encryption"
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/models"
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/urlsigner"
+	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/validator"
 	"github.com/go-chi/chi/v5"
 	"github.com/stripe/stripe-go/v74"
 	"golang.org/x/crypto/bcrypt"
@@ -118,6 +119,15 @@ func (app *application) CreateCustomerAndSubscribeToPlan(w http.ResponseWriter, 
 		return
 	}
 	app.infoLog.Println(data.Email, data.LastFour, data.PaymentMethod, data.Plan)
+
+	// validation
+	v := validator.New()
+	v.Check(len(data.FirstName) > 2, "first_name", "must be at least 2 characters long")
+	v.Check(len(data.LastName) > 2, "last_name", "must be at least 2 characters long")
+	if !v.Valid() {
+		app.failedValidation(w, r, v.Errors)
+		return
+	}
 
 	card := cards.Card{
 		Secret:   app.config.stripe.secret,
