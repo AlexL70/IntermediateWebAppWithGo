@@ -17,14 +17,16 @@
     <p>{{$widget.Description}}</p>
     <hr>
     <div class="mb-3">
-        <label for="first-name" class="form-label">First Name</label>
-        <input type="text" class="form-control" id="first-name" name="first_name"
-            required="" autocomplete="first-name-new"/>
+        <label for="first_name" class="form-label">First Name</label>
+        <input type="text" class="form-control" id="first_name" name="first_name"
+            required="" autocomplete="first_name-new"/>
+        <div id="first_name-help" class="form-text"></div>
     </div>
     <div class="mb-3">
-        <label for="last-name" class="form-label">Last Name</label>
-        <input type="text" class="form-control" id="last-name" name="last_name"
-            required="" autocomplete="last-name-new"/>
+        <label for="last_name" class="form-label">Last Name</label>
+        <input type="text" class="form-control" id="last_name" name="last_name"
+            required="" autocomplete="last_name-new"/>
+        <div id="last_name-help" class="form-text"></div>
     </div>
     <div class="mb-3">
         <label for="cardholder-email" class="form-label">Email</label>
@@ -131,8 +133,8 @@
                     card_brand: result.paymentMethod.card.brand,
                     exp_month: result.paymentMethod.card.exp_month,
                     exp_year: result.paymentMethod.card.exp_year,
-                    first_name: document.getElementById("first-name").value,
-                    last_name: document.getElementById("last-name").value,
+                    first_name: document.getElementById("first_name").value,
+                    last_name: document.getElementById("last_name").value,
                     amount: document.getElementById("amount").value,
                 }
 
@@ -149,13 +151,27 @@
                     .then(response => response.json())
                     .then(function(data) {
                         console.log(data);
-                        showCardSuccess();
-                        hidePayButton();
-                        sessionStorage.first_name = document.getElementById("first-name").value;
-                        sessionStorage.last_name = document.getElementById("last-name").value;
-                        sessionStorage.amount = "{{formatCurrency $widget.Price}}";
-                        sessionStorage.last_four = result.paymentMethod.card.last4;
-                        location.href = "/receipt/bronze";
+                        if (data.error === false) {
+                            showCardSuccess();
+                            hidePayButton();
+                            sessionStorage.first_name = document.getElementById("first_name").value;
+                            sessionStorage.last_name = document.getElementById("last_name").value;
+                            sessionStorage.amount = "{{formatCurrency $widget.Price}}";
+                            sessionStorage.last_four = result.paymentMethod.card.last4;
+                            location.href = "/receipt/bronze";
+                        } else {
+                            document.getElementById("charge_form").classList.remove("was-validated")
+                            Object.entries(data.errors).forEach(i => {
+                                const [key, value] = i
+                                console.log(`"${key}": "${value}"`)
+                                document.getElementById(key).classList.add("is-invalid");
+                                helper = document.getElementById(`${key}-help`);
+                                helper.innerText = value;
+                                helper.classList.remove("valid-feedback");
+                                helper.classList.add("invalid-feedback");
+                            });
+                            showPayButton();
+                        }
                     })
             }
         }
