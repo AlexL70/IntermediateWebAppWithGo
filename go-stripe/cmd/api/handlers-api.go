@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/cards"
+	common_models "github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/common"
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/encryption"
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/models"
 	"github.com/AlexL70/IntermediateWebAppWithGo/go-stripe/internal/urlsigner"
@@ -185,7 +187,24 @@ func (app *application) CreateCustomerAndSubscribeToPlan(w http.ResponseWriter, 
 			Quantity:      1,
 			Amount:        amount,
 		}
-		_, err = app.SaveOrder(order)
+		orderID, err := app.SaveOrder(order)
+		if err != nil {
+			app.errorLog.Println(err)
+			okay = false
+			goto FINISH
+		}
+
+		inv := common_models.Order{
+			ID:        orderID,
+			Amount:    2000,
+			Product:   "Bronze plan monthly subscription",
+			Quantity:  order.Quantity,
+			FirstName: data.FirstName,
+			LastName:  data.LastName,
+			Email:     data.Email,
+			CreatedAt: time.Now(),
+		}
+		err = app.callInvoiceMicro(inv)
 		if err != nil {
 			app.errorLog.Println(err)
 			okay = false
@@ -805,4 +824,25 @@ func lastPageNo(recordCount, pageSize int) int {
 		lastNo++
 	}
 	return lastNo
+}
+
+func (app *application) callInvoiceMicro(inv common_models.Order) error {
+	url := "http://localhost:5000/invoice/create-and-send"
+	out, err := json.MarshalIndent(inv, "", "  ")
+	if err != nil {
+		return fmt.Errorf("error marshalling invoice: %w", err)
+	}
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(out))
+	if err != nil {
+		return fmt.Errorf("error creating request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("error calling invoice microservice: %w", err)
+	}
+	defer resp.Body.Close()
+	app.infoLog.Println(resp.Body)
+	return nil
 }
